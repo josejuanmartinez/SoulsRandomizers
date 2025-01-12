@@ -54,10 +54,10 @@ namespace RandomizerCommon
             PARAM.Row baseGood = game.Params["EquipParamGoods"][2470];
             int baseId = 6405;
 
-            FMG itemName = game.ItemFMGs["アイテム名"];
-            FMG itemDesc = game.ItemFMGs["アイテム説明"];
-            FMG weaponName = game.ItemFMGs["武器名"];
-            FMG weaponDesc = game.ItemFMGs["武器説明"];
+            FMGX itemName = game.ItemFMGs["アイテム名"];
+            FMGX itemDesc = game.ItemFMGs["アイテム説明"];
+            FMGX weaponName = game.ItemFMGs["武器名"];
+            FMGX weaponDesc = game.ItemFMGs["武器説明"];
             SortedDictionary<ItemKey, string> gameNames = game.Names();
 
             bool explain = false;

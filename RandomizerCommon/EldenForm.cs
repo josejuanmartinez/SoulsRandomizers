@@ -1617,7 +1617,8 @@ namespace RandomizerCommon
                     modDirs.Add(modDir.FullName);
                 }
             }
-            Runner.CreateLaunchFile(comments, modDirs);
+            MergedMods mergedMods = new(modDirs, new List<string>());
+            Runner.CreateLaunchFile(comments, mergedMods);
         }
 
         [Localize]

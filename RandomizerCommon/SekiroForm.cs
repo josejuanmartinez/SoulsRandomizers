@@ -604,7 +604,7 @@ namespace RandomizerCommon
         private void RefreshImage()
         {
 #if DEV_RELEASE
-            List<Image> mascots = new List<Image>
+           /* List<Image> mascots = new List<Image>
             {
                 Resources.WolfSip,
                 Resources.EmmaSip,
@@ -692,7 +692,7 @@ namespace RandomizerCommon
             }
             mascot.Visible = !look;
             itemPic.Visible = look;
-            catPic.Visible = look;
+            catPic.Visible = look;*/
 #endif
         }
         private int lastItemPic = -1;

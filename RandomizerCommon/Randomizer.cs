@@ -447,14 +447,14 @@ namespace RandomizerCommon
             else if (game.AC6)
             {
 #if DEV
-                LocationData data = null;
+                /*LocationData data = null;
                 if (opt["item"])
                 {
                     notify?.Invoke(messages.Get(itemPhase));
 
                     AC6LocationDataScraper scraper = new AC6LocationDataScraper();
                     data = scraper.FindItems(game, opt);
-                }
+                }*/
 #endif
             }
         }

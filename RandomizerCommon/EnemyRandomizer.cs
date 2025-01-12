@@ -177,7 +177,7 @@ namespace RandomizerCommon
                 ann = deserializer.Deserialize<EnemyAnnotations>(reader);
             }
 #if DEV
-            if (opt["dumpenemy"])
+            /*if (opt["dumpenemy"])
             {
                 new EnemyConfigGen(game, events, eventConfig).WriteEldenEnemyCategories(ann); return null;
             }
@@ -204,7 +204,7 @@ namespace RandomizerCommon
                         new EnemyConfigGen(game, events, eventConfig).WriteEldenEnemyList(ann, opt); return null;
                     }
                 }
-            }
+            }*/
 #endif
 
             List<EnemyClass> randomizedTypes = new List<EnemyClass>
@@ -654,7 +654,7 @@ namespace RandomizerCommon
 
             // Do metadata processing here
 #if DEV
-            if (opt["configgen"])
+            /*if (opt["configgen"])
             {
                 if (game.Sekiro)
                 {
@@ -680,7 +680,7 @@ namespace RandomizerCommon
                     new EnemyConfigGen(game, events, eventConfig).WriteDS3Events(opt, infos, defaultData);
                 }
                 return null;
-            }
+            }*/
 #endif
             // new ReverseEnemyOrder().EnemyDS3(game, infos); return null;
             Dictionary<int, (TGenerator, List<int>)> generators = enemyEditor.GetGeneratorData(maps);

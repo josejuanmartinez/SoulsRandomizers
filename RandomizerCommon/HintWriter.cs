@@ -10,6 +10,7 @@ using YamlDotNet.Serialization;
 using static RandomizerCommon.AnnotationData;
 using static RandomizerCommon.LocationData;
 using static RandomizerCommon.Util;
+using SoulsIds;
 
 namespace RandomizerCommon
 {
@@ -39,8 +40,8 @@ namespace RandomizerCommon
             // defeat a named enemy
             // defeat a formidable foe
             // defeat a powerful enemy
-            FMG itemDesc = game.ItemFMGs["アイテム説明"];
-            FMG eventText = game.MenuFMGs["イベントテキスト"];
+            FMGX itemDesc = game.ItemFMGs["アイテム説明"];
+            FMGX eventText = game.MenuFMGs["イベントテキスト"];
             if (opt["writehints"])
             {
                 List<int> eventIds = new List<int>

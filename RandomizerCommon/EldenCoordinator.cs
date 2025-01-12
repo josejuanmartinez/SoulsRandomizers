@@ -109,8 +109,8 @@ namespace RandomizerCommon
             }
 
             // First, bonfires
-            FMG placeFmg = game.ItemFMGs["PlaceName"];
-            FMG warpFmg = game.MenuFMGs["GR_MenuText"];
+            FMGX placeFmg = game.ItemFMGs["PlaceName"];
+            FMGX warpFmg = game.MenuFMGs["GR_MenuText"];
             Dictionary<int, string> cats = new Dictionary<int, string>();
             foreach (PARAM.Row row in game.Params["BonfireWarpSubCategoryParam"].Rows)
             {
@@ -423,7 +423,7 @@ namespace RandomizerCommon
 
         internal void TestBonfireCoords(GameData game)
         {
-            FMG placeFmg = game.ItemFMGs["PlaceName"];
+            FMGX placeFmg = game.ItemFMGs["PlaceName"];
             HashSet<uint> bonfireObjs = new HashSet<uint>(
                 game.Params["BonfireWarpParam"].Rows
                     .Select(row => (uint)row["bonfireEntityId"].Value)
