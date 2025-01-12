@@ -757,7 +757,7 @@
             itemPage.Controls.Add(language);
             itemPage.Controls.Add(healthGroup);
             itemPage.Controls.Add(biasGroup);
-            itemPage.Controls.Add(progressGroup);
+            // itemPage.Controls.Add(progressGroup);
             itemPage.Controls.Add(locationGroup);
             itemPage.Controls.Add(keyGroup);
             itemPage.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -779,10 +779,10 @@
             placementGroup.Controls.Add(spellshopsL);
             placementGroup.Controls.Add(weaponprogression);
             placementGroup.Controls.Add(mats);
-            placementGroup.Location = new System.Drawing.Point(7, 253);
+            placementGroup.Location = new System.Drawing.Point(7, 113);
             placementGroup.Name = "placementGroup";
             placementGroup.Size = new System.Drawing.Size(359, 161);
-            placementGroup.TabIndex = 2;
+            placementGroup.TabIndex = 1;
             placementGroup.TabStop = false;
             placementGroup.Text = "Item placement";
             // 
@@ -1621,15 +1621,15 @@
             BackColor = System.Drawing.SystemColors.Control;
             ClientSize = new System.Drawing.Size(1181, 756);
             Controls.Add(statusStrip1);
-            Controls.Add(mergemod);
-            Controls.Add(mergeButton);
+            // Controls.Add(mergemod);
+            // Controls.Add(mergeButton);
             Controls.Add(launchButton);
             Controls.Add(exe);
             Controls.Add(exeButton);
             Controls.Add(item);
             // Controls.Add(enemy);
             Controls.Add(tabControl);
-            Controls.Add(updateButton);
+            // Controls.Add(updateButton);
             Controls.Add(warningL);
             Controls.Add(randomize);
             Controls.Add(fixedseed);

@@ -55,12 +55,12 @@ namespace RandomizerCommon
                 tabControl.BlinkColor = Color.FromArgb(255, 220, 230);
             }
             // And static dropdowns. Temporarily disable options tracking while doing so
-            simultaneousUpdate = true;
-            runes_end.DataSource = Enumerable.Range(0, 8).Select(i => $" {i}").ToList();
-            runes_leyndell.DataSource = Enumerable.Range(0, 8).Select(i => $" {i}").ToList();
-            runes_leyndell.SelectedIndex = 2;
-            runes_rold.DataSource = new[] { " --" }.Concat(Enumerable.Range(0, 8).Select(i => $" {i}")).ToList();
-            simultaneousUpdate = false;
+            // simultaneousUpdate = true;
+            // runes_end.DataSource = Enumerable.Range(0, 8).Select(i => $" {i}").ToList();
+            // runes_leyndell.DataSource = Enumerable.Range(0, 8).Select(i => $" {i}").ToList();
+            // runes_leyndell.SelectedIndex = 0;
+            // runes_rold.DataSource = new[] { " --" }.Concat(Enumerable.Range(0, 8).Select(i => $" {i}")).ToList();
+            // simultaneousUpdate = false;
 
             messages = new Messages("diste", loadEmpty);
             if (dumpMessages)
@@ -73,7 +73,7 @@ namespace RandomizerCommon
                 DumpEnglishMessages(
                     new List<Form> { this, optionsForm, presetForm, mergeForm },
                     new List<Type> {
-                            typeof(EldenForm), typeof(OptionsForm), typeof(PresetEditForm),
+                            typeof(EldenFormConvergence), typeof(OptionsForm), typeof(PresetEditForm),
                             typeof(MiscSetup), typeof(Preset), typeof(EnemyAnnotations),
                             typeof(Randomizer), typeof(HintMarker), typeof(Permutation), typeof(PermutationWriter),
                     });
@@ -317,7 +317,7 @@ namespace RandomizerCommon
             "EldenForm_status");
         [Localize]
         private static readonly Text credits = new Text(
-            "Created by {0}.",
+            "Created by {0}",
             "EldenForm_status_credits");
         [Localize]
         private static readonly Text creditsWithTranslators = new Text(
@@ -331,11 +331,11 @@ namespace RandomizerCommon
                 string cred;
                 if (string.IsNullOrWhiteSpace(translators))
                 {
-                    cred = messages.Get(credits, "thefifthmatt");
+                    cred = messages.Get(credits, "thefifthmatt + josejuanmartinez");
                 }
                 else
                 {
-                    cred = messages.Get(creditsWithTranslators, "thefifthmatt", translators);
+                    cred = messages.Get(creditsWithTranslators, "thefifthmatt + josejuanmartinez", translators);
                 }
                 msg = messages.Get(status, cred, options.ConfigHash());
             }
