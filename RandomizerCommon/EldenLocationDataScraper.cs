@@ -806,6 +806,8 @@ namespace RandomizerCommon
                                 List<object> args = ins.UnpackArgs(Enumerable.Repeat(ArgType.Int32, ins.ArgData.Length / 4));
                                 foreach (int index in indices)
                                 {
+                                    if (offset + index >= args.Count) continue;
+                                    if (offset + index < 0) continue;
                                     int lot = (int)args[offset + index];
                                     if (lot <= 0) continue;
                                     string entityText = "";
@@ -832,12 +834,17 @@ namespace RandomizerCommon
                                 foreach ((int, int) val in nameIndices)
                                 {
                                     (int entityIndex, int nameIndex) = val;
+                                    if (offset + entityIndex >= args.Count) continue;
+                                    if (offset + nameIndex >= args.Count) continue;
+                                    if (offset + entityIndex < 0) continue;
+                                    if (offset + nameIndex < 0) continue;
                                     int entityId = (int)args[offset + entityIndex];
                                     int nameId = (int)args[offset + nameIndex];
                                     if (entityId > 0 && nameId > 0)
                                     {
                                         AddMulti(entityNpcNames, entityId, nameId);
                                     }
+                                    
                                 }
                             }
                         }

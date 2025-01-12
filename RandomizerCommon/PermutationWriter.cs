@@ -143,47 +143,56 @@ namespace RandomizerCommon
             }
             else
             {
-                foreach (KeyValuePair<ItemKey, ItemLocations> entry in data.Data)
+                try
                 {
-                    ItemKey item = entry.Key;
-                    // Only Elden Ring has custom weapons, where itemValueCells is not used
-                    PARAM.Row row = game.Item(item);
-                    int price = game.EldenRing ? -1 : (int)row[itemValueCells[(int)item.Type]].Value;
-                    // int sellPrice = (int)row["sellValue"].Value;
-                    PriceCategory cat = GetPriceCategory(item);
-                    foreach (ItemLocation itemLoc in entry.Value.Locations.Values)
+                    foreach (KeyValuePair<ItemKey, ItemLocations> entry in data.Data)
                     {
-                        foreach (LocationKey loc in itemLoc.Keys.Where(k => k.Type == LocationType.SHOP))
+                        ItemKey item = entry.Key;
+                        // Only Elden Ring has custom weapons, where itemValueCells is not used
+                        PARAM.Row row = game.Item(item);
+                        int price = game.EldenRing ? -1 : (int)row[itemValueCells[(int)item.Type]].Value;
+                        // int sellPrice = (int)row["sellValue"].Value;
+                        PriceCategory cat = GetPriceCategory(item);
+                        foreach (ItemLocation itemLoc in entry.Value.Locations.Values)
                         {
-                            PARAM.Row shop = shops[loc.ID];
-                            if (shop == null) continue;
-                            int shopPrice = (int)shop["value"].Value;
-                            if (price == -1 && shopPrice == -1) continue;
-                            // No custom shops
-                            if (game.EldenRing && (byte)shop["costType"].Value > 0) continue;
-                            shopPrice = shopPrice == -1 ? price : shopPrice;
-                            // Don't price regular items toooo high - looking at you, 20k for Tower Key. Key items are priced separately anyway
-                            if (cat == PriceCategory.FINITE_GOOD && shopPrice > 10000) continue;
-                            // 0 shop prices are okay in transpose shops in DS3, but does not get categorized
-                            // in the same way in Elden Ring
-                            if (game.EldenRing && shopPrice <= 0) continue;
-                            AddMulti(prices, cat, shopPrice);
-                            if (cat == PriceCategory.UPGRADE && itemLoc.Scope.Type == ScopeType.SHOP_INFINITE)
+                            foreach (LocationKey loc in itemLoc.Keys.Where(k => k.Type == LocationType.SHOP))
                             {
-                                upgradePrices[item] = shopPrice;
+                                PARAM.Row shop = shops[loc.ID];
+                                if (shop == null) continue;
+                                int shopPrice = (int)shop["value"].Value;
+                                if (price == -1 && shopPrice == -1) continue;
+                                // No custom shops
+                                if (game.EldenRing && (byte)shop["costType"].Value > 0) continue;
+                                shopPrice = shopPrice == -1 ? price : shopPrice;
+                                // Don't price regular items toooo high - looking at you, 20k for Tower Key. Key items are priced separately anyway
+                                if (cat == PriceCategory.FINITE_GOOD && shopPrice > 10000) continue;
+                                // 0 shop prices are okay in transpose shops in DS3, but does not get categorized
+                                // in the same way in Elden Ring
+                                if (game.EldenRing && shopPrice <= 0) continue;
+                                AddMulti(prices, cat, shopPrice);
+                                if (cat == PriceCategory.UPGRADE && itemLoc.Scope.Type == ScopeType.SHOP_INFINITE)
+                                {
+                                    upgradePrices[item] = shopPrice;
+                                }
                             }
-                        }
-                        if (itemLoc.Scope.Type == ScopeType.MODEL)
-                        {
-                            Dictionary<int, float> chances = GetDropChances(item, itemLoc);
-                            // Console.WriteLine($"Location for {game.Name(item)}. Chances {string.Join(",", chances)}");
-                            if (chances.Count > 0)
+                            if (itemLoc.Scope.Type == ScopeType.MODEL)
                             {
-                                AddMulti(dropChances, cat, chances);
+                                Dictionary<int, float> chances = GetDropChances(item, itemLoc);
+                                // Console.WriteLine($"Location for {game.Name(item)}. Chances {string.Join(",", chances)}");
+                                if (chances.Count > 0)
+                                {
+                                    AddMulti(dropChances, cat, chances);
+                                }
                             }
+
                         }
                     }
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+                
             }
 
             List<string> lotSuffixes = game.EldenRing ? new List<string> { "_map", "_enemy" } : new List<string> { "" };
@@ -1465,324 +1474,326 @@ namespace RandomizerCommon
                 {
                     "ashdupe", "singleton", "removecheck", "volcanoreq", "runearg", "leyndell"
                 };
-                foreach (KeyValuePair<string, EMEVD> entry in game.Emevds)
+                try
                 {
-                    EMEVD emevd = entry.Value;
-                    Dictionary<int, EMEVD.Event> fileEvents = entry.Value.Events.ToDictionary(e => (int)e.ID, e => e);
-                    foreach (EMEVD.Event e in emevd.Events)
+                    foreach (KeyValuePair<string, EMEVD> entry in game.Emevds)
                     {
-                        for (int i = 0; i < e.Instructions.Count; i++)
+                        EMEVD emevd = entry.Value;
+                        Dictionary<int, EMEVD.Event> fileEvents = entry.Value.Events.ToDictionary(e => (int)e.ID, e => e);
+                        foreach (EMEVD.Event e in emevd.Events)
                         {
-                            EMEVD.Instruction init = e.Instructions[i];
-                            if (!(init.Bank == 2000 && (init.ID == 0 || init.ID == 6))) continue;
-                            List<object> initArgs = init.UnpackArgs(Enumerable.Repeat(ArgType.Int32, init.ArgData.Length / 4));
-                            int offset = 2;
-                            int callee = (int)initArgs[1];
-                            if (!templates.TryGetValue(callee, out EventSpec ev)) continue;
-                            if (ev.ItemTemplate.Count == 0) throw new Exception($"event {callee} has no templates");
-                            if (ev.ItemTemplate[0].Type == "remove")
+                            for (int i = 0; i < e.Instructions.Count; i++)
                             {
-                                // Remove action by removing initialization, for now. Can garbage collect later if desired.
-                                e.Instructions[i] = new EMEVD.Instruction(1014, 69);
-                                continue;
-                            }
-                            // Source flag and event to edit. We're not copying the event so only one type of pass is required.
-                            List<(int, EMEVD.Event, ItemTemplate)> eventCopies = new List<(int, EMEVD.Event, ItemTemplate)>();
-                            foreach (ItemTemplate t in ev.ItemTemplate)
-                            {
-                                // Types: item itemarg, loc locarg, fixeditem, default, ashdupe, singleton, volcanoreq, remove
-                                if (t.Type == "remove" || t.Type == "fixeditem" || t.Type == "default") continue;
-                                List<int> templateFlags = t.EventFlag == null ? new List<int>() : t.EventFlag.Split(' ').Select(int.Parse).ToList();
-                                List<int> flags;
-                                if (specialEdits.Contains(t.Type))
+                                EMEVD.Instruction init = e.Instructions[i];
+                                if (!(init.Bank == 2000 && (init.ID == 0 || init.ID == 6))) continue;
+                                List<object> initArgs = init.UnpackArgs(Enumerable.Repeat(ArgType.Int32, init.ArgData.Length / 4));
+                                int offset = 2;
+                                int callee = (int)initArgs[1];
+                                if (!templates.TryGetValue(callee, out EventSpec ev)) continue;
+                                if (ev.ItemTemplate.Count == 0) throw new Exception($"event {callee} has no templates");
+                                if (ev.ItemTemplate[0].Type == "remove")
                                 {
-                                    flags = new List<int> { 0 };
-                                }
-                                else if (t.Type.Contains("arg"))
-                                {
-                                    if (t.EventFlagArg == null) throw new Exception($"Internal error: No arg defined for item flag in {callee}");
-                                    if (!TryArgSpec(t.EventFlagArg.Split(' ').Last(), out int pos))
-                                    {
-                                        throw new Exception($"Internal error: Bad argspec {callee}");
-                                    }
-                                    int argFlag = (int)initArgs[offset + pos];
-                                    if (!templateFlags.Contains(argFlag))
-                                    {
-                                        // Console.WriteLine($"{callee}: {t.EventFlagArg} {argFlag} not an item flag");
-                                        continue;
-                                    }
-                                    flags = new List<int> { argFlag };
-                                }
-                                else
-                                {
-                                    flags = templateFlags;
-                                }
-                                foreach (int flag in flags)
-                                {
-                                    if (t.Type.Contains("arg"))
-                                    {
-                                        eventCopies.Add((flag, null, t));
-                                    }
-                                    else if (fileEvents.TryGetValue(callee, out EMEVD.Event theEvent) || commonEvents.TryGetValue(callee, out theEvent))
-                                    {
-                                        if (completedTemplates.Contains((t, flag))) continue;
-                                        completedTemplates.Add((t, flag));
-                                        eventCopies.Add((flag, theEvent, t));
-                                    }
-                                    else
-                                    {
-                                        throw new Exception($"Initialized event {callee} but absent from {entry.Key} and not specified in args");
-                                    }
-                                }
-                            }
-                            foreach (var copy in eventCopies)
-                            {
-                                (int flag, EMEVD.Event e2, ItemTemplate t) = copy;
-                                // Types: item itemarg, loc locarg, ashdupe, singleton
-                                if (t.Type == "ashdupe")
-                                {
-                                    // In this case, edit the event. Simplified version of it:
-                                    // Event 65810. X0_4 = duplication shop qwc, X4_4 = get event flag
-                                    // EndIf(EventFlag(X0_4));
-                                    // WaitFor(EventFlag(X4_4));
-                                    // SetEventFlag(TargetEventFlagType.EventFlag, X0_4, ON);
-                                    // if (!EventFlag(65800)) SetEventFlag(TargetEventFlagType.EventFlag, 65800, ON);
-                                    // Unfortunately, PlayerHasItem doesn't work for gems. We need to do an off->on check.
-                                    OldParams pre = OldParams.Preprocess(e2);
-                                    // EndIfEventFlag(EventEndType.End, ON, TargetFlagType.EventFlag, X4_4)
-                                    EMEVD.Instruction check = new EMEVD.Instruction(1003, 2, new List<object> { (byte)0, (byte)1, (byte)0, 0 });
-                                    pre.AddParameters(check, new List<EMEVD.Parameter> { new EMEVD.Parameter(0, 4, 4, 4) });
-                                    e2.Instructions.Insert(0, check);
-                                    pre.Postprocess();
+                                    // Remove action by removing initialization, for now. Can garbage collect later if desired.
+                                    e.Instructions[i] = new EMEVD.Instruction(1014, 69);
                                     continue;
                                 }
-                                else if (t.Type == "singleton")
+                                // Source flag and event to edit. We're not copying the event so only one type of pass is required.
+                                List<(int, EMEVD.Event, ItemTemplate)> eventCopies = new List<(int, EMEVD.Event, ItemTemplate)>();
+                                foreach (ItemTemplate t in ev.ItemTemplate)
                                 {
-                                    OldParams pre = OldParams.Preprocess(e2);
-                                    // EndIfEventFlag(EventEndType.End, ON, TargetEventFlagType.EventIDSlotNumber, 0)
-                                    EMEVD.Instruction check = new EMEVD.Instruction(1003, 2, new List<object> { (byte)0, (byte)1, (byte)2, 0 });
-                                    e2.Instructions.Insert(0, check);
-                                    pre.Postprocess();
-                                    continue;
-                                }
-                                else if (t.Type == "removecheck")
-                                {
-                                    OldParams pre = OldParams.Preprocess(e2);
-                                    if (TryArgSpec(t.EventFlagArg, out int pos))
+                                    // Types: item itemarg, loc locarg, fixeditem, default, ashdupe, singleton, volcanoreq, remove
+                                    if (t.Type == "remove" || t.Type == "fixeditem" || t.Type == "default") continue;
+                                    List<int> templateFlags = t.EventFlag == null ? new List<int>() : t.EventFlag.Split(' ').Select(int.Parse).ToList();
+                                    List<int> flags;
+                                    if (specialEdits.Contains(t.Type))
                                     {
-                                        for (int j = e2.Instructions.Count - 1; j >= 0; j--)
-                                        {
-                                            EMEVD.Instruction ins = e2.Instructions[j];
-                                            // EndIfEventFlag(EventEndType.End, ON, TargetEventFlagType.EventFlag, X12_4)
-                                            if (ins.Bank == 1003 && ins.ID == 2)
-                                            {
-                                                EMEVD.Parameter flagParam = e2.Parameters.Find(p =>
-                                                    p.InstructionIndex == j && p.SourceStartByte == pos * 4 && p.TargetStartByte == 4);
-                                                if (flagParam != null)
-                                                {
-                                                    e2.Instructions[j] = new EMEVD.Instruction(1014, 69);
-                                                    game.WriteEmevds.Add(entry.Key);
-                                                }
-                                            }
-                                        }
+                                        flags = new List<int> { 0 };
                                     }
-                                    pre.Postprocess();
-                                    continue;
-                                }
-                                else if (t.Type == "volcanoreq")
-                                {
-                                    // Don't switch to 3106 and 3107 without joining the Volcano Manor (flag 16009208)
-                                    // Accomplish through label and jump
-                                    bool addedLabel = false;
-                                    for (int j = e2.Instructions.Count - 1; j >= 0; j--)
+                                    else if (t.Type.Contains("arg"))
                                     {
-                                        EMEVD.Instruction ins = e2.Instructions[j];
-                                        // SetEventFlag(TargetEventFlagType.EventFlag, 3107, ON)
-                                        if (ins.Bank == 2003 && ins.ID == 66)
-                                        {
-                                            List<object> args = ins.UnpackArgs(new[] { ArgType.Byte, ArgType.UInt32, ArgType.Byte });
-                                            if ((uint)args[1] == 3107)
-                                            {
-                                                EMEVD.Instruction add = new EMEVD.Instruction(1014, 15);
-                                                e2.Instructions.Insert(j + 1, add);
-                                                addedLabel = true;
-                                            }
-                                        }
-                                        // GotoIfEventFlag(Label.LABEL0, OFF, TargetEventFlagType.EventFlag, 3100)
-                                        if (addedLabel && ins.Bank == 1003 && ins.ID == 101)
-                                        {
-                                            List<object> args = ins.UnpackArgs(new[] { ArgType.Byte, ArgType.Byte, ArgType.Byte, ArgType.UInt32 });
-                                            if ((byte)args[0] == 0 && (uint)args[3] == 3100)
-                                            {
-                                                EMEVD.Instruction add = new EMEVD.Instruction(
-                                                    1003, 101, new List<object> { (byte)15, (byte)0, (byte)0, 16009208 });
-                                                e2.Instructions.Insert(j + 1, add);
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    continue;
-                                }
-                                else if (t.Type == "runearg")
-                                {
-                                    // First arg position is the rune activation flag (191 through 196)
-                                    // Second arg position is the must-show-up flag (boss defeat flag by default)
-                                    // Rewrite the second to match the first, when it's a valid activation flag
-                                    // This depends on the indices lining up; otherwise, it will require a manual list.
-                                    string[] parts = t.EventFlagArg?.Split(' ');
-                                    if (parts?.Length != 2
-                                        || !TryArgSpec(parts[0], out int activatePos)
-                                        || !TryArgSpec(parts[1], out int showPos))
-                                    {
-                                        throw new Exception($"Internal error: Invalid runearg format {t.EventFlagArg}");
-                                    }
-                                    int activateFlag = (int)initArgs[offset + activatePos];
-                                    if (activateFlag >= 191 && activateFlag <= 196)
-                                    {
-                                        int getFlag = activateFlag - 20;
-                                        initArgs[offset + showPos] = getFlag;
-                                        init.PackArgs(initArgs);
-                                        game.WriteEmevds.Add(entry.Key);
-                                    }
-                                    continue;
-                                }
-                                else if (t.Type == "leyndell")
-                                {
-                                    // For the leyndell edit, replace the Great Runes flag with a different amount if requested
-                                    // It turns out that 180 is a valid flag after 0 GRs.
-                                    if (!opt.GetInt("runes_leyndell", 0, 7, out int leyndellRunes) || leyndellRunes == 2)
-                                    {
-                                        continue;
-                                    }
-                                    int unlockFlag = 180 + leyndellRunes;
-                                    OldParams pre = OldParams.Preprocess(e2);
-                                    for (int j = e2.Instructions.Count - 1; j >= 0; j--)
-                                    {
-                                        EMEVD.Instruction ins = e2.Instructions[j];
-                                        if (flagPositions.TryGetValue((ins.Bank, ins.ID), out (int, int) range))
-                                        {
-                                            (int aPos, int bPos) = range;
-                                            List<object> args = ins.UnpackArgs(Enumerable.Repeat(ArgType.Int32, ins.ArgData.Length / 4));
-                                            int flagVal = (int)args[bPos];
-                                            if (flagVal != 182) continue;
-                                            args[aPos] = args[bPos] = unlockFlag;
-                                            ins.PackArgs(args);
-                                            game.WriteEmevds.Add(entry.Key);
-                                        }
-                                    }
-                                    pre.Postprocess();
-                                    continue;
-                                }
-                                if (flag <= 0) throw new Exception($"Internal error: Flag missing for {callee} item flag rewrite");
-
-                                if (!getFlagEdit(t.Type, flag, out int targetFlag, out ItemKey item))
-                                {
-                                    continue;
-                                }
-                                if (t.Type == "itemflag")
-                                {
-                                    // In cases where items are given for quests, the item's presence can't be used
-                                    item = null;
-                                }
-
-                                bool edited = false;
-                                if (t.EventFlagArg != null)
-                                {
-                                    foreach (string arg in t.EventFlagArg.Split(' '))
-                                    {
-                                        if (!TryArgSpec(arg, out int pos))
+                                        if (t.EventFlagArg == null) throw new Exception($"Internal error: No arg defined for item flag in {callee}");
+                                        if (!TryArgSpec(t.EventFlagArg.Split(' ').Last(), out int pos))
                                         {
                                             throw new Exception($"Internal error: Bad argspec {callee}");
                                         }
-                                        initArgs[offset + pos] = targetFlag;
-                                        init.PackArgs(initArgs);
-                                        edited = true;
-                                    }
-                                }
-                                else if (e2 != null)
-                                {
-                                    OldParams pre = OldParams.Preprocess(e2);
-                                    for (int j = e2.Instructions.Count - 1; j >= 0; j--)
-                                    {
-                                        EMEVD.Instruction ins = e2.Instructions[j];
-                                        if (flagPositions.TryGetValue((ins.Bank, ins.ID), out (int, int) range))
+                                        int argFlag = (int)initArgs[offset + pos];
+                                        if (!templateFlags.Contains(argFlag))
                                         {
-                                            (int aPos, int bPos) = range;
-                                            List<object> args = ins.UnpackArgs(Enumerable.Repeat(ArgType.Int32, ins.ArgData.Length / 4));
-                                            int flagVal = (int)args[bPos];
-                                            if (flag != flagVal) continue;
-                                            // Custom case for item checks: check item directly, if it can be done in-place
-                                            // This doesn't get all of them, there are a few skips/gotos/ends e.g. in 12042400, 1050563700
-                                            if (item != null && (int)item.Type <= 3 && ins.Bank == 3 && ins.ID == 0)
-                                            {
-                                                // 3[00] IfEventFlag(sbyte group, byte flagState, byte flagType, int flag)
-                                                args = ins.UnpackArgs(new[] { ArgType.SByte, ArgType.Byte, ArgType.Byte, ArgType.Int32 });
-                                                // 3[04] IfPlayerHasdoesntHaveItem(sbyte group, byte itemType, int itemId, byte ownState)
-                                                e2.Instructions[j] = ins = new EMEVD.Instruction(3, 4);
-                                                ins.PackArgs(new List<object> { args[0], (byte)item.Type, item.ID, args[1] });
-                                                edited = true;
-                                            }
-                                            // This is an even more involved rewrite for Goto/End, which is needed for consistency with the first case
-                                            else if (t.ItemCond != 0 && item != null && (int)item.Type <= 3 && ins.Bank == 1003 && (ins.ID == 1 || ins.ID == 2 || ins.ID == 101))
-                                            {
-                                                // TODO: This is very iffy. Should use EMEDF for this to pre-transform the event instead.
-                                                if (t.ItemCond > 15)
-                                                {
-                                                    throw new Exception($"Cannot rewrite {callee} with item {item}, ran out of conds");
-                                                }
-                                                // 1003[1/2/101] [Skip/End/Goto]IfEventFlag(byte control, byte flagState, byte flagType, int flag)
-                                                args = ins.UnpackArgs(new[] { ArgType.Byte, ArgType.Byte, ArgType.Byte, ArgType.Int32 });
-                                                // 3[04] IfPlayerHasdoesntHaveItem(sbyte group, byte itemType, int itemId, byte ownState)
-                                                e2.Instructions[j] = new EMEVD.Instruction(
-                                                    3, 4, new List<object> { (sbyte)t.ItemCond, (byte)item.Type, item.ID, args[1] });
-                                                // 1000[1/2/101] [Skip/End/Goto]IfConditionGroupStateUncompiled(byte control, byte state, sbyte group)
-                                                e2.Instructions.Insert(j + 1, new EMEVD.Instruction(
-                                                    1000, ins.ID, new List<object> { args[0], (byte)1, (sbyte)t.ItemCond }));
-                                                edited = true;
-                                                // >:(
-                                                t.ItemCond++;
-                                            }
-                                            else if (targetFlag > 0)
-                                            {
-                                                args[aPos] = args[bPos] = targetFlag;
-                                                ins.PackArgs(args);
-                                                edited = true;
-                                            }
+                                            // Console.WriteLine($"{callee}: {t.EventFlagArg} {argFlag} not an item flag");
+                                            continue;
+                                        }
+                                        flags = new List<int> { argFlag };
+                                    }
+                                    else
+                                    {
+                                        flags = templateFlags;
+                                    }
+                                    foreach (int flag in flags)
+                                    {
+                                        if (t.Type.Contains("arg"))
+                                        {
+                                            eventCopies.Add((flag, null, t));
+                                        }
+                                        else if (fileEvents.TryGetValue(callee, out EMEVD.Event theEvent) || commonEvents.TryGetValue(callee, out theEvent))
+                                        {
+                                            if (completedTemplates.Contains((t, flag))) continue;
+                                            completedTemplates.Add((t, flag));
+                                            eventCopies.Add((flag, theEvent, t));
+                                        }
+                                        else
+                                        {
+                                            throw new Exception($"Initialized event {callee} but absent from {entry.Key} and not specified in args");
                                         }
                                     }
-                                    pre.Postprocess();
                                 }
-                                if (!edited) new Exception($"Couldn't apply flag edit {flag} -> {targetFlag} to {callee}");
-                                if (e2 != null && commonEvents.ContainsKey(callee))
+                                foreach (var copy in eventCopies)
                                 {
-                                    game.WriteEmevds.Add("common_func");
-                                }
-                                else
-                                {
-                                    game.WriteEmevds.Add(entry.Key);
+                                    (int flag, EMEVD.Event e2, ItemTemplate t) = copy;
+                                    // Types: item itemarg, loc locarg, ashdupe, singleton
+                                    if (t.Type == "ashdupe")
+                                    {
+                                        // In this case, edit the event. Simplified version of it:
+                                        // Event 65810. X0_4 = duplication shop qwc, X4_4 = get event flag
+                                        // EndIf(EventFlag(X0_4));
+                                        // WaitFor(EventFlag(X4_4));
+                                        // SetEventFlag(TargetEventFlagType.EventFlag, X0_4, ON);
+                                        // if (!EventFlag(65800)) SetEventFlag(TargetEventFlagType.EventFlag, 65800, ON);
+                                        // Unfortunately, PlayerHasItem doesn't work for gems. We need to do an off->on check.
+                                        OldParams pre = OldParams.Preprocess(e2);
+                                        // EndIfEventFlag(EventEndType.End, ON, TargetFlagType.EventFlag, X4_4)
+                                        EMEVD.Instruction check = new EMEVD.Instruction(1003, 2, new List<object> { (byte)0, (byte)1, (byte)0, 0 });
+                                        pre.AddParameters(check, new List<EMEVD.Parameter> { new EMEVD.Parameter(0, 4, 4, 4) });
+                                        e2.Instructions.Insert(0, check);
+                                        pre.Postprocess();
+                                        continue;
+                                    }
+                                    else if (t.Type == "singleton")
+                                    {
+                                        OldParams pre = OldParams.Preprocess(e2);
+                                        // EndIfEventFlag(EventEndType.End, ON, TargetEventFlagType.EventIDSlotNumber, 0)
+                                        EMEVD.Instruction check = new EMEVD.Instruction(1003, 2, new List<object> { (byte)0, (byte)1, (byte)2, 0 });
+                                        e2.Instructions.Insert(0, check);
+                                        pre.Postprocess();
+                                        continue;
+                                    }
+                                    else if (t.Type == "removecheck")
+                                    {
+                                        OldParams pre = OldParams.Preprocess(e2);
+                                        if (TryArgSpec(t.EventFlagArg, out int pos))
+                                        {
+                                            for (int j = e2.Instructions.Count - 1; j >= 0; j--)
+                                            {
+                                                EMEVD.Instruction ins = e2.Instructions[j];
+                                                // EndIfEventFlag(EventEndType.End, ON, TargetEventFlagType.EventFlag, X12_4)
+                                                if (ins.Bank == 1003 && ins.ID == 2)
+                                                {
+                                                    EMEVD.Parameter flagParam = e2.Parameters.Find(p =>
+                                                        p.InstructionIndex == j && p.SourceStartByte == pos * 4 && p.TargetStartByte == 4);
+                                                    if (flagParam != null)
+                                                    {
+                                                        e2.Instructions[j] = new EMEVD.Instruction(1014, 69);
+                                                        game.WriteEmevds.Add(entry.Key);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        pre.Postprocess();
+                                        continue;
+                                    }
+                                    else if (t.Type == "volcanoreq")
+                                    {
+                                        // Don't switch to 3106 and 3107 without joining the Volcano Manor (flag 16009208)
+                                        // Accomplish through label and jump
+                                        bool addedLabel = false;
+                                        for (int j = e2.Instructions.Count - 1; j >= 0; j--)
+                                        {
+                                            EMEVD.Instruction ins = e2.Instructions[j];
+                                            // SetEventFlag(TargetEventFlagType.EventFlag, 3107, ON)
+                                            if (ins.Bank == 2003 && ins.ID == 66)
+                                            {
+                                                List<object> args = ins.UnpackArgs(new[] { ArgType.Byte, ArgType.UInt32, ArgType.Byte });
+                                                if ((uint)args[1] == 3107)
+                                                {
+                                                    EMEVD.Instruction add = new EMEVD.Instruction(1014, 15);
+                                                    e2.Instructions.Insert(j + 1, add);
+                                                    addedLabel = true;
+                                                }
+                                            }
+                                            // GotoIfEventFlag(Label.LABEL0, OFF, TargetEventFlagType.EventFlag, 3100)
+                                            if (addedLabel && ins.Bank == 1003 && ins.ID == 101)
+                                            {
+                                                List<object> args = ins.UnpackArgs(new[] { ArgType.Byte, ArgType.Byte, ArgType.Byte, ArgType.UInt32 });
+                                                if ((byte)args[0] == 0 && (uint)args[3] == 3100)
+                                                {
+                                                    EMEVD.Instruction add = new EMEVD.Instruction(
+                                                        1003, 101, new List<object> { (byte)15, (byte)0, (byte)0, 16009208 });
+                                                    e2.Instructions.Insert(j + 1, add);
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        continue;
+                                    }
+                                    else if (t.Type == "runearg")
+                                    {
+                                        // First arg position is the rune activation flag (191 through 196)
+                                        // Second arg position is the must-show-up flag (boss defeat flag by default)
+                                        // Rewrite the second to match the first, when it's a valid activation flag
+                                        // This depends on the indices lining up; otherwise, it will require a manual list.
+                                        string[] parts = t.EventFlagArg?.Split(' ');
+                                        if (parts?.Length != 2
+                                            || !TryArgSpec(parts[0], out int activatePos)
+                                            || !TryArgSpec(parts[1], out int showPos))
+                                        {
+                                            throw new Exception($"Internal error: Invalid runearg format {t.EventFlagArg}");
+                                        }
+                                        int activateFlag = (int)initArgs[offset + activatePos];
+                                        if (activateFlag >= 191 && activateFlag <= 196)
+                                        {
+                                            int getFlag = activateFlag - 20;
+                                            initArgs[offset + showPos] = getFlag;
+                                            init.PackArgs(initArgs);
+                                            game.WriteEmevds.Add(entry.Key);
+                                        }
+                                        continue;
+                                    }
+                                    else if (t.Type == "leyndell")
+                                    {
+                                        // For the leyndell edit, replace the Great Runes flag with a different amount if requested
+                                        // It turns out that 180 is a valid flag after 0 GRs.
+                                        if (!opt.GetInt("runes_leyndell", 0, 7, out int leyndellRunes) || leyndellRunes == 2)
+                                        {
+                                            continue;
+                                        }
+                                        int unlockFlag = 180 + leyndellRunes;
+                                        OldParams pre = OldParams.Preprocess(e2);
+                                        for (int j = e2.Instructions.Count - 1; j >= 0; j--)
+                                        {
+                                            EMEVD.Instruction ins = e2.Instructions[j];
+                                            if (flagPositions.TryGetValue((ins.Bank, ins.ID), out (int, int) range))
+                                            {
+                                                (int aPos, int bPos) = range;
+                                                List<object> args = ins.UnpackArgs(Enumerable.Repeat(ArgType.Int32, ins.ArgData.Length / 4));
+                                                int flagVal = (int)args[bPos];
+                                                if (flagVal != 182) continue;
+                                                args[aPos] = args[bPos] = unlockFlag;
+                                                ins.PackArgs(args);
+                                                game.WriteEmevds.Add(entry.Key);
+                                            }
+                                        }
+                                        pre.Postprocess();
+                                        continue;
+                                    }
+                                    if (flag <= 0) throw new Exception($"Internal error: Flag missing for {callee} item flag rewrite");
+
+                                    if (!getFlagEdit(t.Type, flag, out int targetFlag, out ItemKey item))
+                                    {
+                                        continue;
+                                    }
+                                    if (t.Type == "itemflag")
+                                    {
+                                        // In cases where items are given for quests, the item's presence can't be used
+                                        item = null;
+                                    }
+
+                                    bool edited = false;
+                                    if (t.EventFlagArg != null)
+                                    {
+                                        foreach (string arg in t.EventFlagArg.Split(' '))
+                                        {
+                                            if (!TryArgSpec(arg, out int pos))
+                                            {
+                                                throw new Exception($"Internal error: Bad argspec {callee}");
+                                            }
+                                            initArgs[offset + pos] = targetFlag;
+                                            init.PackArgs(initArgs);
+                                            edited = true;
+                                        }
+                                    }
+                                    else if (e2 != null)
+                                    {
+                                        OldParams pre = OldParams.Preprocess(e2);
+                                        for (int j = e2.Instructions.Count - 1; j >= 0; j--)
+                                        {
+                                            EMEVD.Instruction ins = e2.Instructions[j];
+                                            if (flagPositions.TryGetValue((ins.Bank, ins.ID), out (int, int) range))
+                                            {
+                                                (int aPos, int bPos) = range;
+                                                List<object> args = ins.UnpackArgs(Enumerable.Repeat(ArgType.Int32, ins.ArgData.Length / 4));
+                                                int flagVal = (int)args[bPos];
+                                                if (flag != flagVal) continue;
+                                                // Custom case for item checks: check item directly, if it can be done in-place
+                                                // This doesn't get all of them, there are a few skips/gotos/ends e.g. in 12042400, 1050563700
+                                                if (item != null && (int)item.Type <= 3 && ins.Bank == 3 && ins.ID == 0)
+                                                {
+                                                    // 3[00] IfEventFlag(sbyte group, byte flagState, byte flagType, int flag)
+                                                    args = ins.UnpackArgs(new[] { ArgType.SByte, ArgType.Byte, ArgType.Byte, ArgType.Int32 });
+                                                    // 3[04] IfPlayerHasdoesntHaveItem(sbyte group, byte itemType, int itemId, byte ownState)
+                                                    e2.Instructions[j] = ins = new EMEVD.Instruction(3, 4);
+                                                    ins.PackArgs(new List<object> { args[0], (byte)item.Type, item.ID, args[1] });
+                                                    edited = true;
+                                                }
+                                                // This is an even more involved rewrite for Goto/End, which is needed for consistency with the first case
+                                                else if (t.ItemCond != 0 && item != null && (int)item.Type <= 3 && ins.Bank == 1003 && (ins.ID == 1 || ins.ID == 2 || ins.ID == 101))
+                                                {
+                                                    // TODO: This is very iffy. Should use EMEDF for this to pre-transform the event instead.
+                                                    if (t.ItemCond > 15)
+                                                    {
+                                                        throw new Exception($"Cannot rewrite {callee} with item {item}, ran out of conds");
+                                                    }
+                                                    // 1003[1/2/101] [Skip/End/Goto]IfEventFlag(byte control, byte flagState, byte flagType, int flag)
+                                                    args = ins.UnpackArgs(new[] { ArgType.Byte, ArgType.Byte, ArgType.Byte, ArgType.Int32 });
+                                                    // 3[04] IfPlayerHasdoesntHaveItem(sbyte group, byte itemType, int itemId, byte ownState)
+                                                    e2.Instructions[j] = new EMEVD.Instruction(
+                                                        3, 4, new List<object> { (sbyte)t.ItemCond, (byte)item.Type, item.ID, args[1] });
+                                                    // 1000[1/2/101] [Skip/End/Goto]IfConditionGroupStateUncompiled(byte control, byte state, sbyte group)
+                                                    e2.Instructions.Insert(j + 1, new EMEVD.Instruction(
+                                                        1000, ins.ID, new List<object> { args[0], (byte)1, (sbyte)t.ItemCond }));
+                                                    edited = true;
+                                                    // >:(
+                                                    t.ItemCond++;
+                                                }
+                                                else if (targetFlag > 0)
+                                                {
+                                                    args[aPos] = args[bPos] = targetFlag;
+                                                    ins.PackArgs(args);
+                                                    edited = true;
+                                                }
+                                            }
+                                        }
+                                        pre.Postprocess();
+                                    }
+                                    if (!edited) new Exception($"Couldn't apply flag edit {flag} -> {targetFlag} to {callee}");
+                                    if (e2 != null && commonEvents.ContainsKey(callee))
+                                    {
+                                        game.WriteEmevds.Add("common_func");
+                                    }
+                                    else
+                                    {
+                                        game.WriteEmevds.Add(entry.Key);
+                                    }
                                 }
                             }
                         }
-                    }
-                    void addNewEvent(int id, IEnumerable<EMEVD.Instruction> instrs, EMEVD.Event.RestBehaviorType rest = EMEVD.Event.RestBehaviorType.Default)
-                    {
-                        EMEVD.Event ev = new EMEVD.Event(id, rest);
-                        // ev.Instructions.AddRange(instrs.Select(t => events.ParseAdd(t)));
-                        ev.Instructions.AddRange(instrs);
-                        emevd.Events.Add(ev);
-                        emevd.Events[0].Instructions.Add(new EMEVD.Instruction(2000, 0, new List<object> { 0, (uint)id, (uint)0 }));
-                    }
-                    if (entry.Key == "common")
-                    {
-                        List<EMEVD.Instruction> runeInstrs = new List<EMEVD.Instruction>();
-                        // Basic basic structure: if get either runes, and the base flag is not set
-                        int reg = 1;
-                        foreach (KeyValuePair<int, (ItemKey, ItemKey)> rune in greatRunes)
+                        void addNewEvent(int id, IEnumerable<EMEVD.Instruction> instrs, EMEVD.Event.RestBehaviorType rest = EMEVD.Event.RestBehaviorType.Default)
                         {
-                            int flag = rune.Key;
-                            ItemKey a = rune.Value.Item1;
-                            ItemKey b = rune.Value.Item2;
-                            runeInstrs.AddRange(new List<EMEVD.Instruction>
+                            EMEVD.Event ev = new EMEVD.Event(id, rest);
+                            // ev.Instructions.AddRange(instrs.Select(t => events.ParseAdd(t)));
+                            ev.Instructions.AddRange(instrs);
+                            emevd.Events.Add(ev);
+                            emevd.Events[0].Instructions.Add(new EMEVD.Instruction(2000, 0, new List<object> { 0, (uint)id, (uint)0 }));
+                        }
+                        if (entry.Key == "common")
+                        {
+                            List<EMEVD.Instruction> runeInstrs = new List<EMEVD.Instruction>();
+                            // Basic basic structure: if get either runes, and the base flag is not set
+                            int reg = 1;
+                            foreach (KeyValuePair<int, (ItemKey, ItemKey)> rune in greatRunes)
+                            {
+                                int flag = rune.Key;
+                                ItemKey a = rune.Value.Item1;
+                                ItemKey b = rune.Value.Item2;
+                                runeInstrs.AddRange(new List<EMEVD.Instruction>
                             {
                                 // IfEventFlag(reg, OFF, TargetEventFlagType.EventFlag, flag)
                                 new EMEVD.Instruction(3, 0, new List<object> { (sbyte)reg, (byte)0, (byte)0, flag }),
@@ -1795,41 +1806,41 @@ namespace RandomizerCommon
                                 // IfConditionGroup(-10, PASS, reg)
                                 new EMEVD.Instruction(0, 0, new List<object> { (sbyte)-10, (byte)1, (sbyte)reg }),
                             });
-                            reg++;
-                        }
-                        // IfConditionGroup(MAIN, PASS, -10)
-                        runeInstrs.Add(new EMEVD.Instruction(0, 0, new List<object> { (sbyte)0, (byte)1, (sbyte)-10 }));
-                        // runeInstrs.Add(new EMEVD.Instruction(2003, 4, new List<object> { 997220 }));
-                        reg = 1;
-                        foreach (KeyValuePair<int, (ItemKey, ItemKey)> rune in greatRunes)
-                        {
-                            int flag = rune.Key;
-                            runeInstrs.AddRange(new List<EMEVD.Instruction>
+                                reg++;
+                            }
+                            // IfConditionGroup(MAIN, PASS, -10)
+                            runeInstrs.Add(new EMEVD.Instruction(0, 0, new List<object> { (sbyte)0, (byte)1, (sbyte)-10 }));
+                            // runeInstrs.Add(new EMEVD.Instruction(2003, 4, new List<object> { 997220 }));
+                            reg = 1;
+                            foreach (KeyValuePair<int, (ItemKey, ItemKey)> rune in greatRunes)
+                            {
+                                int flag = rune.Key;
+                                runeInstrs.AddRange(new List<EMEVD.Instruction>
                             {
                                 // SkipIfConditionGroupStateCompiled(1, OFF, reg)
                                 new EMEVD.Instruction(1000, 7, new List<object> { (byte)1, (byte)0, (byte)reg }),
                                 // SetEventFlag(TargetEventFlagType.EventFlag, flag, ON)
                                 new EMEVD.Instruction(2003, 66, new List<object> { (byte)0, flag, (byte)1 }),
                             });
-                            reg++;
+                                reg++;
+                            }
+                            // We could loop this, but there are weird states (like flag on but no item)
+                            // so it's simpler just to make it happen a single time on reload.
+                            addNewEvent(19003130, runeInstrs, EMEVD.Event.RestBehaviorType.Restart);
                         }
-                        // We could loop this, but there are weird states (like flag on but no item)
-                        // so it's simpler just to make it happen a single time on reload.
-                        addNewEvent(19003130, runeInstrs, EMEVD.Event.RestBehaviorType.Restart);
-                    }
-                    if (entry.Key == "m60_49_53_00" && opt.GetInt("runes_rold", 0, 7, out int roldRunes))
-                    {
-                        int unlockFlag = 180 + roldRunes;
-                        // Rold Medallion has been taken out of logic, so make self-contained logic to award it here.
-                        // This is similar to Sekiro memory lots, which are invented from whole cloth.
-                        // It precludes it from being added in hint logs easily. As an alternative, add it in data scraper.
-                        ItemKey rold = ann.ItemGroups["removerold"][0];
-                        LotCells roldCells = ShopToItemLot(ShopCellsForItem(rold), rold, random, false);
-                        roldCells.EventFlag = roldFlag;
-                        AddLot("ItemLotParam_map", roldFlag, roldCells, itemRarity, false);
+                        if (entry.Key == "m60_49_53_00" && opt.GetInt("runes_rold", 0, 7, out int roldRunes))
+                        {
+                            int unlockFlag = 180 + roldRunes;
+                            // Rold Medallion has been taken out of logic, so make self-contained logic to award it here.
+                            // This is similar to Sekiro memory lots, which are invented from whole cloth.
+                            // It precludes it from being added in hint logs easily. As an alternative, add it in data scraper.
+                            ItemKey rold = ann.ItemGroups["removerold"][0];
+                            LotCells roldCells = ShopToItemLot(ShopCellsForItem(rold), rold, random, false);
+                            roldCells.EventFlag = roldFlag;
+                            AddLot("ItemLotParam_map", roldFlag, roldCells, itemRarity, false);
 
-                        // Just put this in Rold map, otherwise we'd want to add a map check before the radius check
-                        List<EMEVD.Instruction> runeInstrs = new List<EMEVD.Instruction>
+                            // Just put this in Rold map, otherwise we'd want to add a map check before the radius check
+                            List<EMEVD.Instruction> runeInstrs = new List<EMEVD.Instruction>
                         {
                             // EndIfEventFlag(EventEndType.End, ON, TargetEventFlagType.EventFlag, roldFlag)
                             new EMEVD.Instruction(1003, 2, new List<object> { (byte)0, (byte)1, (byte)2, roldFlag }),
@@ -1847,13 +1858,17 @@ namespace RandomizerCommon
                             // AwardItemLot(roldFlag)
                             new EMEVD.Instruction(2003, 4, new List<object> { roldFlag }),
                         };
-                        addNewEvent(roldEventId, runeInstrs, EMEVD.Event.RestBehaviorType.Default);
-                        game.WriteEmevds.Add(entry.Key);
-                        // "You do not have the required medallion" (msg 20020/20021) -> "You cannot use this without more Great Runes" 20004
-                        // But the original string does not appear anywhere? So this remains as-is.
+                            addNewEvent(roldEventId, runeInstrs, EMEVD.Event.RestBehaviorType.Default);
+                            game.WriteEmevds.Add(entry.Key);
+                            // "You do not have the required medallion" (msg 20020/20021) -> "You cannot use this without more Great Runes" 20004
+                            // But the original string does not appear anywhere? So this remains as-is.
+                        }
                     }
                 }
-
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
                 // Now ESDs. AST should make this a lot simpler than the Sekiro case
                 Dictionary<int, EventSpec> talkTemplates = eventConfig.ItemTalks.ToDictionary(e => e.ID, e => e);
                 bool debugEsd = false;
@@ -1904,71 +1919,76 @@ namespace RandomizerCommon
                 List<ESD.Condition> GetConditions(List<ESD.Condition> condList) => Enumerable.Concat(condList, condList.SelectMany(cond => GetConditions(cond.Subconditions))).ToList();
                 foreach (KeyValuePair<string, Dictionary<string, ESD>> entry in game.Talk)
                 {
-                    bool modified = false;
-                    foreach (KeyValuePair<string, ESD> esdEntry in entry.Value)
+                    try
                     {
-                        ESD esd = esdEntry.Value;
-                        int esdId = int.Parse(esdEntry.Key.Substring(1));
-                        if (!talkTemplates.TryGetValue(esdId, out EventSpec spec) || spec.ItemTemplate == null) continue;
-
-                        // We have some edits to do
-                        foreach (KeyValuePair<long, Dictionary<long, ESD.State>> machine in esd.StateGroups)
+                        bool modified = false;
+                        foreach (KeyValuePair<string, ESD> esdEntry in entry.Value)
                         {
-                            int machineId = (int)machine.Key;
-                            string machineName = AST.FormatMachine(machineId);
-                            List<ItemTemplate> machineTemplates = spec.ItemTemplate.Where(t => t.Machine == machineName).ToList();
-                            if (machineTemplates.Count == 0) continue;
+                            ESD esd = esdEntry.Value;
+                            int esdId = int.Parse(esdEntry.Key.Substring(1));
+                            if (!talkTemplates.TryGetValue(esdId, out EventSpec spec) || spec.ItemTemplate == null) continue;
 
-                            Dictionary<int, string> flagEdits = new Dictionary<int, string>();
-                            foreach (ItemTemplate t in machineTemplates)
+                            // We have some edits to do
+                            foreach (KeyValuePair<long, Dictionary<long, ESD.State>> machine in esd.StateGroups)
                             {
-                                if (debugEsd) Console.WriteLine($"{entry.Key}: Examining {esdId} machine {t.Machine} type {t.Type}");
-                                if (t.Type == "default" || t.Type == "fixeditem") continue;
-                                if ((t.Type != "item" && t.Type != "loc") || t.EventFlag == null)
-                                {
-                                    throw new Exception($"Internal error: unknown ESD edit in {esdId} {machineName}");
-                                }
-                                foreach (int flag in t.EventFlag.Split(' ').Select(int.Parse))
-                                {
-                                    flagEdits[flag] = t.Type;
-                                }
-                            }
-                            if (flagEdits.Count == 0) continue;
+                                int machineId = (int)machine.Key;
+                                string machineName = AST.FormatMachine(machineId);
+                                List<ItemTemplate> machineTemplates = spec.ItemTemplate.Where(t => t.Machine == machineName).ToList();
+                                if (machineTemplates.Count == 0) continue;
 
-                            foreach (KeyValuePair<long, ESD.State> stateEntry in machine.Value)
-                            {
-                                int stateId = (int)stateEntry.Key;
-                                ESD.State state = stateEntry.Value;
-                                List<ESD.Condition> conds = GetConditions(state.Conditions);
-                                foreach (ESD.CommandCall cmd in new[] { state.EntryCommands, state.WhileCommands, state.ExitCommands, conds.SelectMany(c => c.PassCommands) }.SelectMany(c => c))
+                                Dictionary<int, string> flagEdits = new Dictionary<int, string>();
+                                foreach (ItemTemplate t in machineTemplates)
                                 {
-                                    for (int i = 0; i < cmd.Arguments.Count; i++)
+                                    if (debugEsd) Console.WriteLine($"{entry.Key}: Examining {esdId} machine {t.Machine} type {t.Type}");
+                                    if (t.Type == "default" || t.Type == "fixeditem") continue;
+                                    if ((t.Type != "item" && t.Type != "loc") || t.EventFlag == null)
                                     {
-                                        byte[] arg2 = rewriteArg(cmd.Arguments[i], flagEdits);
-                                        if (arg2 != null)
+                                        throw new Exception($"Internal error: unknown ESD edit in {esdId} {machineName}");
+                                    }
+                                    foreach (int flag in t.EventFlag.Split(' ').Select(int.Parse))
+                                    {
+                                        flagEdits[flag] = t.Type;
+                                    }
+                                }
+                                if (flagEdits.Count == 0) continue;
+
+                                foreach (KeyValuePair<long, ESD.State> stateEntry in machine.Value)
+                                {
+                                    int stateId = (int)stateEntry.Key;
+                                    ESD.State state = stateEntry.Value;
+                                    List<ESD.Condition> conds = GetConditions(state.Conditions);
+                                    foreach (ESD.CommandCall cmd in new[] { state.EntryCommands, state.WhileCommands, state.ExitCommands, conds.SelectMany(c => c.PassCommands) }.SelectMany(c => c))
+                                    {
+                                        for (int i = 0; i < cmd.Arguments.Count; i++)
                                         {
-                                            cmd.Arguments[i] = arg2;
+                                            byte[] arg2 = rewriteArg(cmd.Arguments[i], flagEdits);
+                                            if (arg2 != null)
+                                            {
+                                                cmd.Arguments[i] = arg2;
+                                                modified = true;
+                                            }
+                                        }
+                                    }
+                                    foreach (ESD.Condition cond in conds)
+                                    {
+                                        byte[] eval2 = rewriteArg(cond.Evaluator, flagEdits);
+                                        if (eval2 != null)
+                                        {
+                                            cond.Evaluator = eval2;
                                             modified = true;
                                         }
                                     }
                                 }
-                                foreach (ESD.Condition cond in conds)
-                                {
-                                    byte[] eval2 = rewriteArg(cond.Evaluator, flagEdits);
-                                    if (eval2 != null)
-                                    {
-                                        cond.Evaluator = eval2;
-                                        modified = true;
-                                    }
-                                }
                             }
                         }
+                        if (modified)
+                        {
+                            if (debugEsd) Console.WriteLine($"Modified flag {entry.Key}");
+                            game.WriteESDs.Add(entry.Key);
+                        }
                     }
-                    if (modified)
-                    {
-                        if (debugEsd) Console.WriteLine($"Modified flag {entry.Key}");
-                        game.WriteESDs.Add(entry.Key);
-                    }
+                    catch (Exception e) { Console.WriteLine(e.ToString()); }
+                    
                 }
 
                 // Finally, a pass for merchant Bell Bearings

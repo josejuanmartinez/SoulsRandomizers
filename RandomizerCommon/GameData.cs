@@ -221,7 +221,7 @@ namespace RandomizerCommon
             Mods = mods;
             LoadNames();
             LoadParams();
-            // LoadMapData();
+            LoadMapData();
             LoadTalk();
             LoadScripts();
             LoadText();
@@ -1016,11 +1016,11 @@ namespace RandomizerCommon
             bool lazy = !DS3;
             Dictionary<string, PARAM> dict;
             string path;
-            /*if (!lazy)
+            if (!lazy)
             {
                 // Delay loading layouts if we'll do it in ParamDictionary
                 LoadLayouts();
-            }*/
+            }
             if (DS3)
             {
                 path = $@"{Dir}\Base\Data0.bdt";
@@ -1069,14 +1069,14 @@ namespace RandomizerCommon
                 dict = Editor.LoadParams(path, defs: Defs);
             }
             else throw new Exception();
-            /*if (lazy)
+            if (lazy)
             {
                 LoadLayouts();
-            }*/
+            }
             Params = new ParamDictionary
             {
                 Inner = dict,
-                // Layouts = Layouts,
+                Layouts = Layouts,
                 Defs = Defs,
             };
         }

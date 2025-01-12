@@ -592,7 +592,8 @@ namespace RandomizerCommon
                 if (restrict.Unique == null) continue;
                 bool fillInPercents = restrict.Unique.Any(slot => slot.Percent > 0);
                 if (restrict.MinAvailable <= 0 && !fillInPercents) continue;
-                ItemLocations itemLocs = data.Data[restrict.Key];
+                ItemLocations itemLocs;
+                if (!data.Data.TryGetValue(restrict.Key, out itemLocs)) continue;
                 int baseCount = itemLocs.Locations.Count(l => l.Key.Type == ScopeType.EVENT);
                 int guaranteeAmount = restrict.MinAvailable;
                 if (debug) Console.WriteLine($"Locations for {restrict.Name}: {baseCount} base, {restrict.MatsAmount} mats");

@@ -553,253 +553,260 @@ namespace RandomizerCommon
 
             for (int i = 0; i < 10; i++)
             {
-                if (opt["nostarting"]) break;
-                PARAM.Row row = chara[g.StartId + i];
-                int getStat(string name)
+                try
                 {
-                    return game.EldenRing ? (int)(byte)row[name].Value : (sbyte)row[name].Value;
-                }
-                void setStat(string name, int val)
-                {
-                    if (game.EldenRing)
+                    if (opt["nostarting"]) break;
+                    PARAM.Row row = chara[g.StartId + i];
+                    int getStat(string name)
                     {
-                        row[name].Value = (byte)val;
+                        return game.EldenRing ? (int)(byte)row[name].Value : (sbyte)row[name].Value;
                     }
-                    else
+                    void setStat(string name, int val)
                     {
-                        row[name].Value = (sbyte)val;
-                    }
-                }
-                // First, always fudge magic to 10, so that Orbeck quest is possible.
-                // This could alternatively be an ESD edit.
-                if (game.DS3 && getStat("baseMag") < 10)
-                {
-                    setStat("baseMag", 10);
-                }
-                if (cheat)
-                {
-                    foreach (string stat in g.Stats) setStat($"base{stat}", 90);
-                }
-
-                // Then, see stat diffs for weapons/spells/catalysts, and fudge if necessary
-                CharacterClass chClass = g.Classes[i];
-                // In Elden Ring, everyone starts with 2
-                int attAmt = 2;
-                if (game.DS3)
-                {
-                    int attStat = getStat("baseWil");
-                    attAmt = attStat < 10 ? 0 : attStat < 14 ? 1 : 2;
-                }
-                StatReq chReqs = new StatReq
-                {
-                    Str = getStat("baseStr"),
-                    Dex = getStat("baseDex"),
-                    Int = getStat("baseMag"),
-                    Fai = getStat("baseFai"),
-                    Arc = getStat("baseLuc"),
-                    Att = attAmt,
-                };
-                StatReq dynamicReqs = chReqs;
-                double fudgeFactor = 1.5;
-                float weaponWeight = 0f;
-                int attSlots = 0;
-                bool crossbowSelected = false;
-                if (printChars) Console.WriteLine($"Randomizing starting equipment for {chClass.Name}");
-                Dictionary<ItemKey, (EquipCategory, int)> selectedItems = new Dictionary<ItemKey, (EquipCategory, int)>();
-                foreach (KeyValuePair<string, EquipCategory> entry in g.BaseStart.Concat(chClass.Start))
-                {
-                    EquipCategory originalCat = entry.Value;
-                    EquipCategory cat = originalCat;
-                    if (cat == EquipCategory.DOUBLE_WEAPON)
-                    {
-                        cat = EquipCategory.WEAPON;
-                    }
-                    // TODO: If a catalyst etc also doubles as a weapon, maybe skip its slot.
-                    // This crossbow/bow logic relies on iteration order - try to make the order fixed...
-                    if ((cat == EquipCategory.ARROW && crossbowSelected) || (cat == EquipCategory.BOLT && !crossbowSelected)) continue;
-                    // Console.WriteLine(originalCat);
-                    // Instead of using Distinct, could also make it a SortedSet. It's necessary because of normalization.
-                    Dictionary<ItemKey, int> statDiffs = items[cat].Distinct().ToDictionary(item => item, item => requirements[item].Eligible(dynamicReqs));
-                    List<ItemKey> candidates = items[cat];
-                    if (!opt["nohand"] && (cat == EquipCategory.SHIELD || chClass.Name == "Deprived" || chClass.Name == "Wretch" || !opt["changestats"]))
-                    {
-                        candidates = candidates.Where(item => statDiffs[item] >= 0).ToList();
-                    }
-                    if (cat == EquipCategory.SORCERY || cat == EquipCategory.MIRACLE || cat == EquipCategory.PYROMANCY)
-                    {
-                        // Fit within attunement slots. Alternatively could increase attunement, but that unbalances things potentially.
-                        // Unfortunately means that pyromancer can't start with Chaos Bed Vestiges. Maybe for the best.
-                        if (attSlots == chReqs.Att)
+                        if (game.EldenRing)
                         {
-                            row[entry.Key].Value = -1;
-                            continue;
-                        }
-                        candidates = candidates.Where(item => attSlots + requirements[item].Att <= chReqs.Att).ToList();
-                    }
-                    // Select weapon and adjust stats if necessary
-                    // This could just be WeightedChoice?
-                    List<ItemKey> weightKeys = WeightedShuffle(random, candidates, item =>
-                    {
-                        if (opt["nohand"]) return 1;
-                        int diff = statDiffs[item];
-                        float weight;
-                        if (diff >= 4)
-                        {
-                            // A dropoff from 1 to 0.0625 to not have bad weapons (big gap) chosen too often
-                            weight = (float)Math.Pow(2, -4 * (Math.Min(diff - 4, 20) / 20.0));
-                        }
-                        else if (diff >= 0)
-                        {
-                            weight = 2;
-                        }
-                        else if (diff < -15)
-                        {
-                            // Try to avoid SL much more than 20
-                            weight = 0;
+                            row[name].Value = (byte)val;
                         }
                         else
                         {
-                            // For unwieldable weapons, start at 1.5^-1 (0.666), then 1.5^-2 (0.444), etc.
-                            weight = (float)Math.Pow(fudgeFactor, diff);
-                            // To prevent something too absurd from happening, keep all stats under 20. Multi-stat increases don't look as bad by comparison.
-                            StatReq req = requirements[item];
-                            if (req.GetMaxStat() >= 20) weight = 0;
-                        }
-                        // Console.WriteLine($"{game.Name(item)}: {diff} -> {weight}");
-                        return weight;
-                    });
-                    if (cat == EquipCategory.WEAPON && chClass.Name == "Wretch")
-                    {
-                        foreach (ItemKey key in candidates)
-                        {
-                            // Console.WriteLine($"{game.Name(key)}: stats {requirements[key]}, diff {statDiffs[key]}");
+                            row[name].Value = (sbyte)val;
                         }
                     }
-                    ItemKey selected = weightKeys[0];
-                    items[cat].Remove(selected);
-                    if (statDiffs[selected] < 0 && !opt["nohand"])
+                    // First, always fudge magic to 10, so that Orbeck quest is possible.
+                    // This could alternatively be an ESD edit.
+                    if (game.DS3 && getStat("baseMag") < 10)
                     {
-                        dynamicReqs.Adjust(requirements[selected]);
-                        fudgeFactor *= -statDiffs[selected];
+                        setStat("baseMag", 10);
                     }
-                    row[entry.Key].Value = selected.ID;
-                    int quantity = 1;
-                    if (originalCat == EquipCategory.DOUBLE_WEAPON)
+                    if (cheat)
                     {
-                        row["equip_Wep_Left"].Value = selected.ID;
-                        quantity = 2;
+                        foreach (string stat in g.Stats) setStat($"base{stat}", 90);
                     }
-                    if (weights.ContainsKey(selected))
+
+                    // Then, see stat diffs for weapons/spells/catalysts, and fudge if necessary
+                    CharacterClass chClass = g.Classes[i];
+                    // In Elden Ring, everyone starts with 2
+                    int attAmt = 2;
+                    if (game.DS3)
                     {
-                        weaponWeight += quantity * weights[selected];
+                        int attStat = getStat("baseWil");
+                        attAmt = attStat < 10 ? 0 : attStat < 14 ? 1 : 2;
                     }
-                    attSlots += requirements[selected].Att;
-                    if (printChars) Console.WriteLine($"  {entry.Key} is now {game.Name(selected)}, meets requirements by {statDiffs[selected]}");
-                    selectedItems[selected] = (cat, opt["nohand"] ? statDiffs[selected] : 0);
-                }
-                // In Elden Ring, also change display characters, and add text descriptions
-                if (game.EldenRing)
-                {
-                    for (int j = 0; j < 2; j++)
+                    StatReq chReqs = new StatReq
                     {
-                        PARAM.Row row2 = chara[3100 + i * 2 + j];
-                        foreach (string field in g.BaseStart.Keys
-                            .Concat(chClass.Start.Keys)
-                            .Concat(g.Stats.Select(s => $"base{s}")))
+                        Str = getStat("baseStr"),
+                        Dex = getStat("baseDex"),
+                        Int = getStat("baseMag"),
+                        Fai = getStat("baseFai"),
+                        Arc = getStat("baseLuc"),
+                        Att = attAmt,
+                    };
+                    StatReq dynamicReqs = chReqs;
+                    double fudgeFactor = 1.5;
+                    float weaponWeight = 0f;
+                    int attSlots = 0;
+                    bool crossbowSelected = false;
+                    if (printChars) Console.WriteLine($"Randomizing starting equipment for {chClass.Name}");
+                    Dictionary<ItemKey, (EquipCategory, int)> selectedItems = new Dictionary<ItemKey, (EquipCategory, int)>();
+                    foreach (KeyValuePair<string, EquipCategory> entry in g.BaseStart.Concat(chClass.Start))
+                    {
+                        EquipCategory originalCat = entry.Value;
+                        EquipCategory cat = originalCat;
+                        if (cat == EquipCategory.DOUBLE_WEAPON)
                         {
-                            row2[field].Value = row[field].Value;
+                            cat = EquipCategory.WEAPON;
                         }
-                    }
-                    List<(ItemKey, int)> showItems = selectedItems
-                        .OrderByDescending(e => DescriptionPriority.IndexOf(e.Value.Item1))
-                        .Select(e => (e.Key, e.Value.Item2))
-                        .ToList();
-                    foreach ((string lang, FMGDictionary itemFmgs) in game.AllItemFMGs)
-                    {
-                        bool useSpaces = !lang.StartsWith("jpn") && !lang.StartsWith("zho");
-                        FMGDictionary menuFmgs = game.AllMenuFMGs[lang];
-                        List<string> itemStrs = new List<string>();
-                        foreach ((ItemKey item, int diff) in showItems)
+                        // TODO: If a catalyst etc also doubles as a weapon, maybe skip its slot.
+                        // This crossbow/bow logic relies on iteration order - try to make the order fixed...
+                        if ((cat == EquipCategory.ARROW && crossbowSelected) || (cat == EquipCategory.BOLT && !crossbowSelected)) continue;
+                        // Console.WriteLine(originalCat);
+                        // Instead of using Distinct, could also make it a SortedSet. It's necessary because of normalization.
+                        Dictionary<ItemKey, int> statDiffs = items[cat].Distinct().ToDictionary(item => item, item => requirements[item].Eligible(dynamicReqs));
+                        List<ItemKey> candidates = items[cat];
+                        if (!opt["nohand"] && (cat == EquipCategory.SHIELD || chClass.Name == "Deprived" || chClass.Name == "Wretch" || !opt["changestats"]))
                         {
-                            // Currently, the only two starting weapon types
-                            string fmgName = item.Type == ItemType.WEAPON ? "WeaponName" : "GoodsName";
-                            string itemName = itemFmgs[fmgName][item.ID];
-                            if (!string.IsNullOrWhiteSpace(itemName))
+                            candidates = candidates.Where(item => statDiffs[item] >= 0).ToList();
+                        }
+                        if (cat == EquipCategory.SORCERY || cat == EquipCategory.MIRACLE || cat == EquipCategory.PYROMANCY)
+                        {
+                            // Fit within attunement slots. Alternatively could increase attunement, but that unbalances things potentially.
+                            // Unfortunately means that pyromancer can't start with Chaos Bed Vestiges. Maybe for the best.
+                            if (attSlots == chReqs.Att)
                             {
-                                if (diff < 0)
-                                {
-                                    itemName = useSpaces ? $"{itemName} ({diff})" : $"{itemName}（{diff}）";
-                                }
-                                itemStrs.Add(itemName);
+                                row[entry.Key].Value = -1;
+                                continue;
+                            }
+                            candidates = candidates.Where(item => attSlots + requirements[item].Att <= chReqs.Att).ToList();
+                        }
+                        // Select weapon and adjust stats if necessary
+                        // This could just be WeightedChoice?
+                        List<ItemKey> weightKeys = WeightedShuffle(random, candidates, item =>
+                        {
+                            if (opt["nohand"]) return 1;
+                            int diff = statDiffs[item];
+                            float weight;
+                            if (diff >= 4)
+                            {
+                                // A dropoff from 1 to 0.0625 to not have bad weapons (big gap) chosen too often
+                                weight = (float)Math.Pow(2, -4 * (Math.Min(diff - 4, 20) / 20.0));
+                            }
+                            else if (diff >= 0)
+                            {
+                                weight = 2;
+                            }
+                            else if (diff < -15)
+                            {
+                                // Try to avoid SL much more than 20
+                                weight = 0;
+                            }
+                            else
+                            {
+                                // For unwieldable weapons, start at 1.5^-1 (0.666), then 1.5^-2 (0.444), etc.
+                                weight = (float)Math.Pow(fudgeFactor, diff);
+                                // To prevent something too absurd from happening, keep all stats under 20. Multi-stat increases don't look as bad by comparison.
+                                StatReq req = requirements[item];
+                                if (req.GetMaxStat() >= 20) weight = 0;
+                            }
+                            // Console.WriteLine($"{game.Name(item)}: {diff} -> {weight}");
+                            return weight;
+                        });
+                        if (cat == EquipCategory.WEAPON && chClass.Name == "Wretch")
+                        {
+                            foreach (ItemKey key in candidates)
+                            {
+                                // Console.WriteLine($"{game.Name(key)}: stats {requirements[key]}, diff {statDiffs[key]}");
                             }
                         }
-                        if (chClass.Desc > 0)
+                        ItemKey selected = weightKeys[0];
+                        items[cat].Remove(selected);
+                        if (statDiffs[selected] < 0 && !opt["nohand"])
                         {
-                            string split = SplitCharacterText(useSpaces, itemStrs);
-                            if (!string.IsNullOrWhiteSpace(split))
-                            {
-                                menuFmgs["GR_LineHelp"][chClass.Desc] = split;
-                                // if (lang == "engus") Console.WriteLine($"{chClass.Name}: {split.Replace("\n", "\\n")}");
-                            }
+                            dynamicReqs.Adjust(requirements[selected]);
+                            fudgeFactor *= -statDiffs[selected];
                         }
+                        row[entry.Key].Value = selected.ID;
+                        int quantity = 1;
+                        if (originalCat == EquipCategory.DOUBLE_WEAPON)
+                        {
+                            row["equip_Wep_Left"].Value = selected.ID;
+                            quantity = 2;
+                        }
+                        if (weights.ContainsKey(selected))
+                        {
+                            weaponWeight += quantity * weights[selected];
+                        }
+                        attSlots += requirements[selected].Att;
+                        if (printChars) Console.WriteLine($"  {entry.Key} is now {game.Name(selected)}, meets requirements by {statDiffs[selected]}");
+                        selectedItems[selected] = (cat, opt["nohand"] ? statDiffs[selected] : 0);
                     }
-                }
-                int statChange = dynamicReqs.Eligible(chReqs);
-                if (statChange < 0 && !opt["nohand"])
-                {
-                    setStat("baseStr", dynamicReqs.Str);
-                    setStat("baseDex", dynamicReqs.Dex);
-                    setStat("baseMag", dynamicReqs.Int);
-                    setStat("baseFai", dynamicReqs.Fai);
+                    // In Elden Ring, also change display characters, and add text descriptions
                     if (game.EldenRing)
                     {
-                        setStat("baseLuc", dynamicReqs.Arc);
-                        row["soulLv"].Value = (short)((short)row["soulLv"].Value - statChange);
-                    }
-                    else
-                    {
-                        row["soulLvl"].Value = (short)((short)row["soulLvl"].Value - statChange);
-                    }
-                }
-                // Armor time
-                float totalWeight = getMaxWeight(row);
-                List<ArmorSet> availableSets = armors.TakeWhile(armor => armor.Weight + weaponWeight < totalWeight * 0.69f).ToList();
-                if (availableSets.Count == 0) availableSets = new List<ArmorSet> { armors[0] };
-                ArmorSet selectedArmor = Choice(random, availableSets);
-                armors.Remove(selectedArmor);
-                if (printChars)
-                {
-                    Console.WriteLine($"  Armor: {string.Join(", ", selectedArmor.Ids.Select(id => game.Name(new ItemKey(ItemType.ARMOR, id))))}");
-                    Console.WriteLine($"  Weight: weapons {weaponWeight:0.##} + armor {selectedArmor.Weight:0.##} / {totalWeight:0.##} = {100 * (weaponWeight + selectedArmor.Weight) / totalWeight:0.##}%");
-                }
-                for (int j = 0; j < 4; j++)
-                {
-                    if ((int)row[g.ArmorSlots[j]].Value != -1)
-                    {
-                        row[g.ArmorSlots[j]].Value = selectedArmor.Ids[j];
-                    }
-                }
-
-                if (cheat)
-                {
-                    PARAM reinforce = game.Param("ReinforceParamWeapon");
-                    HashSet<int> reinforceLevels = new HashSet<int>(reinforce.Rows.Select(r => (int)r.ID));
-                    foreach (string wep in g.WeaponSlots)
-                    {
-                        int id = (int)row[wep].Value;
-                        if (id > 0)
+                        for (int j = 0; j < 2; j++)
                         {
-                            id = id - (id % 100);
-                            PARAM.Row item = game.Item(new ItemKey(ItemType.WEAPON, id));
-                            int reinforceId = (short)item["reinforceTypeId"].Value;
-                            while (reinforceLevels.Contains(reinforceId + 5))
+                            PARAM.Row row2 = chara[3100 + i * 2 + j];
+                            foreach (string field in g.BaseStart.Keys
+                                .Concat(chClass.Start.Keys)
+                                .Concat(g.Stats.Select(s => $"base{s}")))
                             {
-                                reinforceId += 5;
-                                id += 5;
+                                row2[field].Value = row[field].Value;
                             }
-                            row[wep].Value = id;
+                        }
+                        List<(ItemKey, int)> showItems = selectedItems
+                            .OrderByDescending(e => DescriptionPriority.IndexOf(e.Value.Item1))
+                            .Select(e => (e.Key, e.Value.Item2))
+                            .ToList();
+                        foreach ((string lang, FMGDictionary itemFmgs) in game.AllItemFMGs)
+                        {
+                            bool useSpaces = !lang.StartsWith("jpn") && !lang.StartsWith("zho");
+                            FMGDictionary menuFmgs = game.AllMenuFMGs[lang];
+                            List<string> itemStrs = new List<string>();
+                            foreach ((ItemKey item, int diff) in showItems)
+                            {
+                                // Currently, the only two starting weapon types
+                                string fmgName = item.Type == ItemType.WEAPON ? "WeaponName" : "GoodsName";
+                                string itemName = itemFmgs[fmgName][item.ID];
+                                if (!string.IsNullOrWhiteSpace(itemName))
+                                {
+                                    if (diff < 0)
+                                    {
+                                        itemName = useSpaces ? $"{itemName} ({diff})" : $"{itemName}（{diff}）";
+                                    }
+                                    itemStrs.Add(itemName);
+                                }
+                            }
+                            if (chClass.Desc > 0)
+                            {
+                                string split = SplitCharacterText(useSpaces, itemStrs);
+                                if (!string.IsNullOrWhiteSpace(split))
+                                {
+                                    menuFmgs["GR_LineHelp"][chClass.Desc] = split;
+                                    // if (lang == "engus") Console.WriteLine($"{chClass.Name}: {split.Replace("\n", "\\n")}");
+                                }
+                            }
                         }
                     }
+                    int statChange = dynamicReqs.Eligible(chReqs);
+                    if (statChange < 0 && !opt["nohand"])
+                    {
+                        setStat("baseStr", dynamicReqs.Str);
+                        setStat("baseDex", dynamicReqs.Dex);
+                        setStat("baseMag", dynamicReqs.Int);
+                        setStat("baseFai", dynamicReqs.Fai);
+                        if (game.EldenRing)
+                        {
+                            setStat("baseLuc", dynamicReqs.Arc);
+                            row["soulLv"].Value = (short)((short)row["soulLv"].Value - statChange);
+                        }
+                        else
+                        {
+                            row["soulLvl"].Value = (short)((short)row["soulLvl"].Value - statChange);
+                        }
+                    }
+                    // Armor time
+                    float totalWeight = getMaxWeight(row);
+                    List<ArmorSet> availableSets = armors.TakeWhile(armor => armor.Weight + weaponWeight < totalWeight * 0.69f).ToList();
+                    if (availableSets.Count == 0) availableSets = new List<ArmorSet> { armors[0] };
+                    ArmorSet selectedArmor = Choice(random, availableSets);
+                    armors.Remove(selectedArmor);
+                    if (printChars)
+                    {
+                        Console.WriteLine($"  Armor: {string.Join(", ", selectedArmor.Ids.Select(id => game.Name(new ItemKey(ItemType.ARMOR, id))))}");
+                        Console.WriteLine($"  Weight: weapons {weaponWeight:0.##} + armor {selectedArmor.Weight:0.##} / {totalWeight:0.##} = {100 * (weaponWeight + selectedArmor.Weight) / totalWeight:0.##}%");
+                    }
+                    for (int j = 0; j < 4; j++)
+                    {
+                        if ((int)row[g.ArmorSlots[j]].Value != -1)
+                        {
+                            row[g.ArmorSlots[j]].Value = selectedArmor.Ids[j];
+                        }
+                    }
+
+                    if (cheat)
+                    {
+                        PARAM reinforce = game.Param("ReinforceParamWeapon");
+                        HashSet<int> reinforceLevels = new HashSet<int>(reinforce.Rows.Select(r => (int)r.ID));
+                        foreach (string wep in g.WeaponSlots)
+                        {
+                            int id = (int)row[wep].Value;
+                            if (id > 0)
+                            {
+                                id = id - (id % 100);
+                                PARAM.Row item = game.Item(new ItemKey(ItemType.WEAPON, id));
+                                int reinforceId = (short)item["reinforceTypeId"].Value;
+                                while (reinforceLevels.Contains(reinforceId + 5))
+                                {
+                                    reinforceId += 5;
+                                    id += 5;
+                                }
+                                row[wep].Value = id;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
                 }
             }
             if (printChars) Console.WriteLine();
@@ -820,37 +827,45 @@ namespace RandomizerCommon
             };
             foreach (PARAM.Row row in chara.Rows.Where(r => r.ID >= 10000))
             {
-                string name = game.CharacterName(row.ID);
-                if (name == null || name.Contains("Mimic Tear") || name == "Human") continue;
-                ArmorSet selectedArmor;
-                if (!npcNameRows.TryGetValue(name, out int baseId))
+                try
                 {
-                    npcNameRows[name] = baseId = row.ID / 10;
-                }
-                if (!npcArmors.ContainsKey(baseId))
-                {
-                    float weaponWeight = g.WeaponSlots.Select(slot => cellWeight(ItemType.WEAPON, row[slot])).Sum();
-                    float armorWeight = g.ArmorSlots.Select(slot => cellWeight(ItemType.ARMOR, row[slot])).Sum();
-                    float weightLimit = weaponWeight + armorWeight;
-                    float totalWeight = getMaxWeight(row);
-                    int armorLimit = armors.FindIndex(armor => armor.Weight + weaponWeight > weightLimit);
-                    if (armorLimit == -1)
+                    string name = game.CharacterName(row.ID);
+                    if (name == null || name.Contains("Mimic Tear") || name == "Human") continue;
+                    ArmorSet selectedArmor;
+                    if (!npcNameRows.TryGetValue(name, out int baseId))
                     {
-                        armorLimit = armors.Count - 1;
+                        npcNameRows[name] = baseId = row.ID / 10;
                     }
-                    armorLimit = Math.Min(20, armorLimit);
-                    npcArmors[baseId] = selectedArmor = armors[random.Next(armorLimit)];
-                    armors.Remove(selectedArmor);
-                    if (printChars) Console.WriteLine($"Armor for {name}: {100 * weightLimit / totalWeight:0.##}% -> {100 * (selectedArmor.Weight + weaponWeight) / totalWeight:0.##}%: {string.Join(", ", selectedArmor.Ids.Select(id => game.Name(new ItemKey(ItemType.ARMOR, id))))}");
-                }
-                selectedArmor = npcArmors[baseId];
-                for (int j = 0; j < 4; j++)
-                {
-                    if ((int)row[g.ArmorSlots[j]].Value != -1)
+                    if (!npcArmors.ContainsKey(baseId))
                     {
-                        row[g.ArmorSlots[j]].Value = selectedArmor.Ids[j];
+                        float weaponWeight = g.WeaponSlots.Select(slot => cellWeight(ItemType.WEAPON, row[slot])).Sum();
+                        float armorWeight = g.ArmorSlots.Select(slot => cellWeight(ItemType.ARMOR, row[slot])).Sum();
+                        float weightLimit = weaponWeight + armorWeight;
+                        float totalWeight = getMaxWeight(row);
+                        int armorLimit = armors.FindIndex(armor => armor.Weight + weaponWeight > weightLimit);
+                        if (armorLimit == -1)
+                        {
+                            armorLimit = armors.Count - 1;
+                        }
+                        armorLimit = Math.Min(20, armorLimit);
+                        npcArmors[baseId] = selectedArmor = armors[random.Next(armorLimit)];
+                        armors.Remove(selectedArmor);
+                        if (printChars) Console.WriteLine($"Armor for {name}: {100 * weightLimit / totalWeight:0.##}% -> {100 * (selectedArmor.Weight + weaponWeight) / totalWeight:0.##}%: {string.Join(", ", selectedArmor.Ids.Select(id => game.Name(new ItemKey(ItemType.ARMOR, id))))}");
+                    }
+                    selectedArmor = npcArmors[baseId];
+                    for (int j = 0; j < 4; j++)
+                    {
+                        if ((int)row[g.ArmorSlots[j]].Value != -1)
+                        {
+                            row[g.ArmorSlots[j]].Value = selectedArmor.Ids[j];
+                        }
                     }
                 }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+                 
             }
             if (printChars) Console.WriteLine();
         }

@@ -268,7 +268,7 @@
             // mats
             // 
             mats.AutoSize = true;
-            mats.Checked = true;
+            mats.Checked = false;
             mats.CheckState = System.Windows.Forms.CheckState.Checked;
             mats.Location = new System.Drawing.Point(7, 94);
             mats.Name = "mats";

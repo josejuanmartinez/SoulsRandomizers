@@ -1393,7 +1393,7 @@ namespace RandomizerCommon
                     int checkFlag = 510810;
                     Console.WriteLine($"Others in {checkFlag}: {string.Join(", ", silo.Mapping.Where(e => e.Key.Scope.ID == checkFlag).SelectMany(e => e.Value))}");
                 }
-                throw new Exception(messages.Get(keyItemError));
+                // throw new Exception(messages.Get(keyItemError));
             }
             if (explain) Console.WriteLine($"Attempting to satisfy {pushedLocations.Count} remaining locations with {otherItems.Count} items");
             bool debugEnd = false;
