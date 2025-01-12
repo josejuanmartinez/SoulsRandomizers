@@ -5,18 +5,15 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Security.Policy;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Newtonsoft.Json;
 using RandomizerCommon.Properties;
 using YamlDotNet.Serialization;
 using static RandomizerCommon.Messages;
 using static SoulsIds.GameSpec;
 using SoulsIds;
-using Ookii.Dialogs.WinForms;
 
 namespace RandomizerCommon
 {
@@ -164,7 +161,7 @@ namespace RandomizerCommon
         private static readonly Dictionary<string, int?> defaultDropdownValues = new Dictionary<string, int?>
         {
             ["runes_end"] = 0,
-            ["runes_leyndell"] = 2,
+            ["runes_leyndell"] = 0,
             ["runes_rold"] = null,
         };
 
@@ -785,10 +782,15 @@ namespace RandomizerCommon
                 enable.Key.Enabled = enable.Value;
             }
             enemyseed_TextChanged(null, null);
-            randomize.Enabled = (options["enemy"] || options["item"]) && !error;
+            if((options["enemy"] || options["item"]) && !error) updateRandomizeButton();
             if (changes) SetControlFlags(this);
             UpdateLaunchGame();
             simultaneousUpdate = false;
+        }
+
+        private void updateRandomizeButton()
+        {
+            randomize.Enabled = Settings.Default.Exe != null && Settings.Default.Exe.Length > 0 && Settings.Default.Mod != null && Settings.Default.Mod.Length > 0;
         }
 
         private void UpdateLaunchGame()
@@ -1341,7 +1343,7 @@ namespace RandomizerCommon
                 Settings.Default.Exe = exe.Text;
                 Settings.Default.Save();
                 // Somewhat hacky, turn back on to revalidate in SetWarning
-                randomize.Enabled = true;
+                updateRandomizeButton();
             }
             SetWarning();
         }
@@ -1355,6 +1357,8 @@ namespace RandomizerCommon
                 {
                     Settings.Default.Mod = mod;
                     Settings.Default.Save();
+                    // Somewhat hacky, turn back on to revalidate in SetWarning
+                    updateRandomizeButton();
                 }
             }
             catch (ArgumentException) { }

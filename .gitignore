@@ -14,6 +14,8 @@
 *.netbak
 scratch/
 presets/
+diste/Vanilla
+EldenRingConvergenceRandomizer/bin/
 
 # User-specific files
 *.rsuser

@@ -30,7 +30,7 @@
         {
             this.reg = new System.Windows.Forms.Button();
             this.dir = new System.Windows.Forms.Button();
-            this.toml = new System.Windows.Forms.Button();
+            // this.toml = new System.Windows.Forms.Button();
             this.clear = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
@@ -44,7 +44,7 @@
             this.reg.Name = "reg";
             this.reg.Size = new System.Drawing.Size(528, 33);
             this.reg.TabIndex = 1;
-            this.reg.Text = "Select regulation.bin to merge";
+            this.reg.Text = "Select Convergence's regulation.bin";
             this.reg.UseVisualStyleBackColor = true;
             this.reg.Click += new System.EventHandler(this.reg_Click);
             // 
@@ -58,13 +58,13 @@
             this.dir.Name = "dir";
             this.dir.Size = new System.Drawing.Size(528, 33);
             this.dir.TabIndex = 2;
-            this.dir.Text = "Select mod directory to merge";
+            this.dir.Text = "Select Convergence's directory";
             this.dir.UseVisualStyleBackColor = true;
             this.dir.Click += new System.EventHandler(this.dir_Click);
             // 
             // toml
             // 
-            this.toml.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            /*this.toml.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.toml.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.toml.Location = new System.Drawing.Point(13, 90);
@@ -74,7 +74,7 @@
             this.toml.TabIndex = 3;
             this.toml.Text = "Select toml file (merge multiple mods)";
             this.toml.UseVisualStyleBackColor = true;
-            this.toml.Click += new System.EventHandler(this.toml_Click);
+            this.toml.Click += new System.EventHandler(this.toml_Click);*/
             // 
             // clear
             // 

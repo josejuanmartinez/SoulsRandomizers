@@ -21,7 +21,7 @@ namespace RandomizerCommon
         {
             using (OpenFileDialog dialog = new OpenFileDialog())
             {
-                dialog.Title = "Select regulation.bin";
+                dialog.Title = "Select Convergence's regulation.bin";
                 dialog.Filter = "regulation.bin|regulation.bin";
                 dialog.RestoreDirectory = true;
                 if (ModRunner.TryGetDirectory(initial, out string dir))

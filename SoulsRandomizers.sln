@@ -4,17 +4,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RandomizerCommon", "RandomizerCommon\RandomizerCommon.csproj", "{153B7DAC-12FC-4F0F-B5DC-3FCFE546C50C}"
-	ProjectSection(ProjectDependencies) = postProject
-		{22C664BD-877B-44DF-8ECF-2808522469A8} = {22C664BD-877B-44DF-8ECF-2808522469A8}
-	EndProjectSection
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SoulsFormats", "..\SoulsFormats\SoulsFormats\SoulsFormats.csproj", "{22C664BD-877B-44DF-8ECF-2808522469A8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SoulsIds", "..\SoulsIds\SoulsIds\SoulsIds.csproj", "{C46D537C-54DC-48BF-B824-8A950DD9D4F8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrayIris.Utilities", "..\yet-another-tab-control\GrayIris.Utilities.csproj", "{38D57FE6-C75F-4B05-9E4F-D02A48CAA21E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EldenRingConvergenceRandomizer", "EldenRingConvergenceRandomizer\EldenRingConvergenceRandomizer.csproj", "{132FB45C-8D8E-4AB7-B583-FF53AA9357AF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SoulsFormats", "..\SoulsFormatsNEXT\SoulsFormats\SoulsFormats.csproj", "{EDB5F550-B99E-4821-A815-7B28080EA2F1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,14 +29,6 @@ Global
 		{153B7DAC-12FC-4F0F-B5DC-3FCFE546C50C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{153B7DAC-12FC-4F0F-B5DC-3FCFE546C50C}.Release|x64.ActiveCfg = Release|Any CPU
 		{153B7DAC-12FC-4F0F-B5DC-3FCFE546C50C}.Release|x64.Build.0 = Release|Any CPU
-		{22C664BD-877B-44DF-8ECF-2808522469A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{22C664BD-877B-44DF-8ECF-2808522469A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{22C664BD-877B-44DF-8ECF-2808522469A8}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{22C664BD-877B-44DF-8ECF-2808522469A8}.Debug|x64.Build.0 = Debug|Any CPU
-		{22C664BD-877B-44DF-8ECF-2808522469A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{22C664BD-877B-44DF-8ECF-2808522469A8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{22C664BD-877B-44DF-8ECF-2808522469A8}.Release|x64.ActiveCfg = Release|Any CPU
-		{22C664BD-877B-44DF-8ECF-2808522469A8}.Release|x64.Build.0 = Release|Any CPU
 		{C46D537C-54DC-48BF-B824-8A950DD9D4F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C46D537C-54DC-48BF-B824-8A950DD9D4F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C46D537C-54DC-48BF-B824-8A950DD9D4F8}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -64,6 +53,14 @@ Global
 		{132FB45C-8D8E-4AB7-B583-FF53AA9357AF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{132FB45C-8D8E-4AB7-B583-FF53AA9357AF}.Release|x64.ActiveCfg = Release|Any CPU
 		{132FB45C-8D8E-4AB7-B583-FF53AA9357AF}.Release|x64.Build.0 = Release|Any CPU
+		{EDB5F550-B99E-4821-A815-7B28080EA2F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EDB5F550-B99E-4821-A815-7B28080EA2F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EDB5F550-B99E-4821-A815-7B28080EA2F1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EDB5F550-B99E-4821-A815-7B28080EA2F1}.Debug|x64.Build.0 = Debug|Any CPU
+		{EDB5F550-B99E-4821-A815-7B28080EA2F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EDB5F550-B99E-4821-A815-7B28080EA2F1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EDB5F550-B99E-4821-A815-7B28080EA2F1}.Release|x64.ActiveCfg = Release|Any CPU
+		{EDB5F550-B99E-4821-A815-7B28080EA2F1}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

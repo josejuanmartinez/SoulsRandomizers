@@ -417,6 +417,7 @@
             randomize.Text = "Randomize new run!";
             randomize.UseVisualStyleBackColor = true;
             randomize.Click += randomize_Click;
+            randomize.Enabled = false;
             // 
             // fixedseedL
             // 
@@ -1610,7 +1611,7 @@
             mergeButton.Name = "mergeButton";
             mergeButton.Size = new System.Drawing.Size(330, 29);
             mergeButton.TabIndex = 7;
-            mergeButton.Text = "Merge other mod";
+            mergeButton.Text = "Set Convergence Folder";
             mergeButton.UseVisualStyleBackColor = true;
             mergeButton.Click += mergeButton_Click;
             // 
@@ -1621,8 +1622,8 @@
             BackColor = System.Drawing.SystemColors.Control;
             ClientSize = new System.Drawing.Size(1181, 756);
             Controls.Add(statusStrip1);
-            // Controls.Add(mergemod);
-            // Controls.Add(mergeButton);
+            Controls.Add(mergemod);
+            Controls.Add(mergeButton);
             Controls.Add(launchButton);
             Controls.Add(exe);
             Controls.Add(exeButton);

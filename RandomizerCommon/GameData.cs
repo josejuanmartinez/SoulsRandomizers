@@ -221,7 +221,7 @@ namespace RandomizerCommon
             Mods = mods;
             LoadNames();
             LoadParams();
-            LoadMapData();
+            // LoadMapData();
             LoadTalk();
             LoadScripts();
             LoadText();
@@ -1016,11 +1016,11 @@ namespace RandomizerCommon
             bool lazy = !DS3;
             Dictionary<string, PARAM> dict;
             string path;
-            if (!lazy)
+            /*if (!lazy)
             {
                 // Delay loading layouts if we'll do it in ParamDictionary
                 LoadLayouts();
-            }
+            }*/
             if (DS3)
             {
                 path = $@"{Dir}\Base\Data0.bdt";
@@ -1069,14 +1069,14 @@ namespace RandomizerCommon
                 dict = Editor.LoadParams(path, defs: Defs);
             }
             else throw new Exception();
-            if (lazy)
+            /*if (lazy)
             {
                 LoadLayouts();
-            }
+            }*/
             Params = new ParamDictionary
             {
                 Inner = dict,
-                Layouts = Layouts,
+                // Layouts = Layouts,
                 Defs = Defs,
             };
         }
@@ -1105,8 +1105,11 @@ namespace RandomizerCommon
             }
             else
             {
-                Maps = Editor.Load("Vanilla", path => (IMsb)MSBE.Read(path), "*.msb.dcx");
-                MaybeOverrideFromModDir(Maps, name => $@"map\MapStudio\{name}.msb.dcx", path => MSBE.Read(path));
+
+                string sub = @"map\mapstudio";
+
+                Maps = Editor.Load($@"Vanilla\{sub}", path => (IMsb)MSBE.Read(path), "*.msb.dcx");
+                MaybeOverrideFromModDir(Maps, name => $@"{sub}\{name}.msb.dcx", path => MSBE.Read(path));
 
                 // Set up copying dupe maps which are not included in our vanilla files
                 Regex lastRe = new Regex(@"_1([0-2])$");
@@ -1126,8 +1129,9 @@ namespace RandomizerCommon
         {
             if (!DS3 && !AC6)
             {
-                Talk = Editor.LoadBnds(UseVanilla ? "Vanilla" : "Base", (data, path) => ESD.Read(data), "*.talkesdbnd.dcx");
-                MaybeOverrideFromModDir(Talk, name => $@"script\talk\{name}.talkesdbnd.dcx", path => Editor.LoadBnd(path, (data, path2) => ESD.Read(data)));
+                string sub = @"script\talk";
+                Talk = Editor.LoadBnds(UseVanilla ? $@"Vanilla\{sub}" : $@"Base\{sub}", (data, path) => ESD.Read(data), "*.talkesdbnd.dcx");
+                MaybeOverrideFromModDir(Talk, name => $@"{sub}\{name}.talkesdbnd.dcx", path => Editor.LoadBnd(path, (data, path2) => ESD.Read(data)));
                 if (Sekiro)
                 {
                     List<string> missing = Locations.Keys.Concat(new[] { "m00_00_00_00" }).Except(Talk.Keys).ToList();
@@ -1138,7 +1142,8 @@ namespace RandomizerCommon
 
         private void LoadScripts()
         {
-            Emevds = Editor.Load(UseVanilla ? "Vanilla" : "Base", path => EMEVD.Read(path), "*.emevd.dcx");
+            string sub = "event";
+            Emevds = Editor.Load(UseVanilla ? $@"Vanilla\{sub}" : "Base", path => EMEVD.Read(path), "*.emevd.dcx");
             MaybeOverrideFromModDir(Emevds, name => $@"event\{name}.emevd.dcx", path => EMEVD.Read(path));
             if (!EldenRing && !AC6)
             {
